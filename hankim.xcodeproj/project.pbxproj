@@ -39,30 +39,9 @@
 		96AFA3112EFB9F41008A91D1 /* hankim.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = hankim.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		96A757A82F01CA3300DBB160 /* Exceptions for "ShareExtensionTarget" folder in "ShareExtensionTarget" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 96A757992F01CA3300DBB160 /* ShareExtensionTarget */;
-		};
-		96A757AA2F01D08D00DBB160 /* Exceptions for "ShareExtensionTarget" folder in "hankim" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				ShareViewController.swift,
-			);
-			target = 96AFA3102EFB9F41008A91D1 /* hankim */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		96A7579B2F01CA3300DBB160 /* ShareExtensionTarget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				96A757AA2F01D08D00DBB160 /* Exceptions for "ShareExtensionTarget" folder in "hankim" target */,
-				96A757A82F01CA3300DBB160 /* Exceptions for "ShareExtensionTarget" folder in "ShareExtensionTarget" target */,
-			);
 			path = ShareExtensionTarget;
 			sourceTree = "<group>";
 		};
