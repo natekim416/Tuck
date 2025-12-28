@@ -6,11 +6,66 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		96A757A42F01CA3300DBB160 /* ShareExtensionTarget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 96A7579A2F01CA3300DBB160 /* ShareExtensionTarget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		96A757A22F01CA3300DBB160 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 96AFA3092EFB9F41008A91D1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 96A757992F01CA3300DBB160;
+			remoteInfo = ShareExtensionTarget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		96A757A52F01CA3300DBB160 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				96A757A42F01CA3300DBB160 /* ShareExtensionTarget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		96A7579A2F01CA3300DBB160 /* ShareExtensionTarget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtensionTarget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		96AFA3112EFB9F41008A91D1 /* hankim.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = hankim.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		96A757A82F01CA3300DBB160 /* Exceptions for "ShareExtensionTarget" folder in "ShareExtensionTarget" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 96A757992F01CA3300DBB160 /* ShareExtensionTarget */;
+		};
+		96A757AA2F01D08D00DBB160 /* Exceptions for "ShareExtensionTarget" folder in "hankim" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				ShareViewController.swift,
+			);
+			target = 96AFA3102EFB9F41008A91D1 /* hankim */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		96A7579B2F01CA3300DBB160 /* ShareExtensionTarget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				96A757AA2F01D08D00DBB160 /* Exceptions for "ShareExtensionTarget" folder in "hankim" target */,
+				96A757A82F01CA3300DBB160 /* Exceptions for "ShareExtensionTarget" folder in "ShareExtensionTarget" target */,
+			);
+			path = ShareExtensionTarget;
+			sourceTree = "<group>";
+		};
 		96AFA3132EFB9F41008A91D1 /* hankim */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = hankim;
@@ -19,6 +74,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		96A757972F01CA3300DBB160 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		96AFA30E2EFB9F41008A91D1 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -33,6 +95,7 @@
 			isa = PBXGroup;
 			children = (
 				96AFA3132EFB9F41008A91D1 /* hankim */,
+				96A7579B2F01CA3300DBB160 /* ShareExtensionTarget */,
 				96AFA3122EFB9F41008A91D1 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +104,7 @@
 			isa = PBXGroup;
 			children = (
 				96AFA3112EFB9F41008A91D1 /* hankim.app */,
+				96A7579A2F01CA3300DBB160 /* ShareExtensionTarget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,6 +112,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		96A757992F01CA3300DBB160 /* ShareExtensionTarget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 96A757A92F01CA3300DBB160 /* Build configuration list for PBXNativeTarget "ShareExtensionTarget" */;
+			buildPhases = (
+				96A757962F01CA3300DBB160 /* Sources */,
+				96A757972F01CA3300DBB160 /* Frameworks */,
+				96A757982F01CA3300DBB160 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				96A7579B2F01CA3300DBB160 /* ShareExtensionTarget */,
+			);
+			name = ShareExtensionTarget;
+			packageProductDependencies = (
+			);
+			productName = ShareExtensionTarget;
+			productReference = 96A7579A2F01CA3300DBB160 /* ShareExtensionTarget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		96AFA3102EFB9F41008A91D1 /* hankim */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 96AFA31C2EFB9F43008A91D1 /* Build configuration list for PBXNativeTarget "hankim" */;
@@ -55,10 +141,12 @@
 				96AFA30D2EFB9F41008A91D1 /* Sources */,
 				96AFA30E2EFB9F41008A91D1 /* Frameworks */,
 				96AFA30F2EFB9F41008A91D1 /* Resources */,
+				96A757A52F01CA3300DBB160 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				96A757A32F01CA3300DBB160 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				96AFA3132EFB9F41008A91D1 /* hankim */,
@@ -80,6 +168,9 @@
 				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
+					96A757992F01CA3300DBB160 = {
+						CreatedOnToolsVersion = 26.2;
+					};
 					96AFA3102EFB9F41008A91D1 = {
 						CreatedOnToolsVersion = 26.2;
 					};
@@ -100,11 +191,19 @@
 			projectRoot = "";
 			targets = (
 				96AFA3102EFB9F41008A91D1 /* hankim */,
+				96A757992F01CA3300DBB160 /* ShareExtensionTarget */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		96A757982F01CA3300DBB160 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		96AFA30F2EFB9F41008A91D1 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -115,6 +214,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		96A757962F01CA3300DBB160 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		96AFA30D2EFB9F41008A91D1 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -124,7 +230,73 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		96A757A32F01CA3300DBB160 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 96A757992F01CA3300DBB160 /* ShareExtensionTarget */;
+			targetProxy = 96A757A22F01CA3300DBB160 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		96A757A62F01CA3300DBB160 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShareExtensionTarget/ShareExtensionTarget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = RCY3G5XS59;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShareExtensionTarget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ShareExtensionTarget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.natekim.hankim.ShareExtensionTarget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		96A757A72F01CA3300DBB160 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShareExtensionTarget/ShareExtensionTarget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = RCY3G5XS59;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShareExtensionTarget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ShareExtensionTarget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.natekim.hankim.ShareExtensionTarget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		96AFA31A2EFB9F43008A91D1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -251,6 +423,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = hankim/hankim.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = RCY3G5XS59;
@@ -283,6 +456,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = hankim/hankim.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = RCY3G5XS59;
@@ -313,6 +487,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		96A757A92F01CA3300DBB160 /* Build configuration list for PBXNativeTarget "ShareExtensionTarget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				96A757A62F01CA3300DBB160 /* Debug */,
+				96A757A72F01CA3300DBB160 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		96AFA30C2EFB9F41008A91D1 /* Build configuration list for PBXProject "hankim" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
