@@ -1,11 +1,3 @@
-//
-//  DiscoverFolderCard.swift
-//  
-//
-//  Created by Nathaniel Kim on 12/23/25.
-//
-
-
 import SwiftUI
 
 struct DiscoverFolderCard: View {
