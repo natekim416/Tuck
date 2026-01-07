@@ -1,24 +1,25 @@
 import SwiftUI
 
-
 struct ProfileView: View {
+    @EnvironmentObject private var auth: AuthStore
     @ObservedObject var viewModel: BookmarkViewModel
     @State private var showingEditProfile = false
-    
+    @State private var showingLogoutConfirm = false
+
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 20) {
                     ProfileHeaderView(profile: viewModel.userProfile, onEdit: { showingEditProfile = true })
-                    
+
                     Divider().padding(.horizontal)
-                    
+
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Public Folders")
                             .font(.title3)
                             .fontWeight(.semibold)
                             .padding(.horizontal)
-                        
+
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 15) {
                             ForEach(viewModel.folders.filter { $0.isPublic }) { folder in
                                 NavigationLink(destination: FolderDetailView(folder: folder, viewModel: viewModel)) {
@@ -28,7 +29,7 @@ struct ProfileView: View {
                         }
                         .padding(.horizontal)
                     }
-                    
+
                     VStack(alignment: .leading, spacing: 0) {
                         SettingsRow(icon: "bell", title: "Notifications", color: .orange)
                         SettingsRow(icon: "lock", title: "Privacy", color: .blue)
@@ -41,6 +42,21 @@ struct ProfileView: View {
                 .padding(.vertical)
             }
             .navigationTitle("Profile")
+            .toolbar { 
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showingLogoutConfirm = true
+                    } label: {
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                    }
+                }
+            }
+            .confirmationDialog("Log out?", isPresented: $showingLogoutConfirm) {
+                Button("Log out", role: .destructive) {
+                    auth.signOut()
+                }
+                Button("Cancel", role: .cancel) { }
+            }
             .sheet(isPresented: $showingEditProfile) {
                 EditProfileView(profile: viewModel.userProfile) { updated in
                     viewModel.userProfile = updated
@@ -49,6 +65,7 @@ struct ProfileView: View {
         }
     }
 }
+
 
 struct ProfileHeaderView: View {
     let profile: UserProfile

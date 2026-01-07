@@ -8,9 +8,11 @@ struct RootView: View {
             if auth.isRestoringSession {
                 ProgressView()
             } else if auth.user == nil {
-                LoginView()
+                NavigationStack {
+                    LoginView()
+                }
             } else {
-                ContentView() 
+                ContentView()
             }
         }
         .environmentObject(auth)

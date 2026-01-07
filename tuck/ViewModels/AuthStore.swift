@@ -48,4 +48,37 @@ final class AuthStore: ObservableObject {
         user = nil
         UserDefaults.standard.removeObject(forKey: userDefaultsKey)
     }
+    
+    func signUp(email: String, password: String) async throws {
+        // replace with real signup later
+        try await Task.sleep(nanoseconds: 200_000_000)
+
+        // Tiny bit of “fake validation” so signup feels real
+        guard email.contains("@"), email.contains(".") else {
+            throw AuthError.invalidEmail
+        }
+        guard password.count >= 6 else {
+            throw AuthError.weakPassword
+        }
+
+        let newUser = AppUser(id: UUID().uuidString, email: email)
+        user = newUser
+
+        if let data = try? JSONEncoder().encode(newUser) {
+            UserDefaults.standard.set(data, forKey: userDefaultsKey)
+        }
+    }
+
+    enum AuthError: LocalizedError {
+        case invalidEmail
+        case weakPassword
+
+        var errorDescription: String? {
+            switch self {
+            case .invalidEmail: return "Please enter a valid email."
+            case .weakPassword: return "Password must be at least 6 characters."
+            }
+        }
+    }
+
 }
