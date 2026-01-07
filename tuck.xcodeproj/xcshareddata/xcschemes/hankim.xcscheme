@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "96AFA3102EFB9F41008A91D1"
-               BuildableName = "hankim.app"
-               BlueprintName = "hankim"
-               ReferencedContainer = "container:hankim.xcodeproj">
+               BuildableName = "tuck.app"
+               BlueprintName = "tuck"
+               ReferencedContainer = "container:tuck.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -45,9 +45,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "96AFA3102EFB9F41008A91D1"
-            BuildableName = "hankim.app"
-            BlueprintName = "hankim"
-            ReferencedContainer = "container:hankim.xcodeproj">
+            BuildableName = "tuck.app"
+            BlueprintName = "tuck"
+            ReferencedContainer = "container:tuck.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -62,9 +62,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "96AFA3102EFB9F41008A91D1"
-            BuildableName = "hankim.app"
-            BlueprintName = "hankim"
-            ReferencedContainer = "container:hankim.xcodeproj">
+            BuildableName = "tuck.app"
+            BlueprintName = "tuck"
+            ReferencedContainer = "container:tuck.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

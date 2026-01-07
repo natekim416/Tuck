@@ -4,7 +4,7 @@ import SwiftUI
 struct hankim: App {
   var body: some Scene {
     WindowGroup {
-      ContentView()
+      RootView()
     }
   }
 }

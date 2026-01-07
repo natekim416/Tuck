@@ -36,7 +36,7 @@
 
 /* Begin PBXFileReference section */
 		96A7579A2F01CA3300DBB160 /* ShareExtensionTarget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtensionTarget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		96AFA3112EFB9F41008A91D1 /* hankim.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = hankim.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		96AFA3112EFB9F41008A91D1 /* tuck.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = tuck.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -58,9 +58,9 @@
 			path = ShareExtensionTarget;
 			sourceTree = "<group>";
 		};
-		96AFA3132EFB9F41008A91D1 /* hankim */ = {
+		96AFA3132EFB9F41008A91D1 /* tuck */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = hankim;
+			path = tuck;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -86,7 +86,7 @@
 		96AFA3082EFB9F41008A91D1 = {
 			isa = PBXGroup;
 			children = (
-				96AFA3132EFB9F41008A91D1 /* hankim */,
+				96AFA3132EFB9F41008A91D1 /* tuck */,
 				96A7579B2F01CA3300DBB160 /* ShareExtensionTarget */,
 				96AFA3122EFB9F41008A91D1 /* Products */,
 			);
@@ -95,7 +95,7 @@
 		96AFA3122EFB9F41008A91D1 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				96AFA3112EFB9F41008A91D1 /* hankim.app */,
+				96AFA3112EFB9F41008A91D1 /* tuck.app */,
 				96A7579A2F01CA3300DBB160 /* ShareExtensionTarget.appex */,
 			);
 			name = Products;
@@ -126,9 +126,9 @@
 			productReference = 96A7579A2F01CA3300DBB160 /* ShareExtensionTarget.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
-		96AFA3102EFB9F41008A91D1 /* hankim */ = {
+		96AFA3102EFB9F41008A91D1 /* tuck */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 96AFA31C2EFB9F43008A91D1 /* Build configuration list for PBXNativeTarget "hankim" */;
+			buildConfigurationList = 96AFA31C2EFB9F43008A91D1 /* Build configuration list for PBXNativeTarget "tuck" */;
 			buildPhases = (
 				96AFA30D2EFB9F41008A91D1 /* Sources */,
 				96AFA30E2EFB9F41008A91D1 /* Frameworks */,
@@ -141,13 +141,13 @@
 				96A757A32F01CA3300DBB160 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				96AFA3132EFB9F41008A91D1 /* hankim */,
+				96AFA3132EFB9F41008A91D1 /* tuck */,
 			);
-			name = hankim;
+			name = tuck;
 			packageProductDependencies = (
 			);
 			productName = hankim;
-			productReference = 96AFA3112EFB9F41008A91D1 /* hankim.app */;
+			productReference = 96AFA3112EFB9F41008A91D1 /* tuck.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -168,7 +168,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 96AFA30C2EFB9F41008A91D1 /* Build configuration list for PBXProject "hankim" */;
+			buildConfigurationList = 96AFA30C2EFB9F41008A91D1 /* Build configuration list for PBXProject "tuck" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -182,7 +182,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				96AFA3102EFB9F41008A91D1 /* hankim */,
+				96AFA3102EFB9F41008A91D1 /* tuck */,
 				96A757992F01CA3300DBB160 /* ShareExtensionTarget */,
 			);
 		};
@@ -415,7 +415,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = hankim/hankim.entitlements;
+				CODE_SIGN_ENTITLEMENTS = tuck/tuck.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = RCY3G5XS59;
@@ -433,6 +434,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.natekim.hankim;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -448,7 +450,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = hankim/hankim.entitlements;
+				CODE_SIGN_ENTITLEMENTS = tuck/tuck.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = RCY3G5XS59;
@@ -466,6 +469,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.natekim.hankim;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -488,7 +492,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		96AFA30C2EFB9F41008A91D1 /* Build configuration list for PBXProject "hankim" */ = {
+		96AFA30C2EFB9F41008A91D1 /* Build configuration list for PBXProject "tuck" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				96AFA31A2EFB9F43008A91D1 /* Debug */,
@@ -497,7 +501,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		96AFA31C2EFB9F43008A91D1 /* Build configuration list for PBXNativeTarget "hankim" */ = {
+		96AFA31C2EFB9F43008A91D1 /* Build configuration list for PBXNativeTarget "tuck" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				96AFA31D2EFB9F43008A91D1 /* Debug */,
