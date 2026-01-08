@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		963F1F462F10314800FA1821 /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 963F1F452F10314800FA1821 /* OpenAI */; };
 		96A757A42F01CA3300DBB160 /* ShareExtensionTarget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 96A7579A2F01CA3300DBB160 /* ShareExtensionTarget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -41,15 +40,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		96225FB62F0F375E0063F45A /* Exceptions for "tuck" folder in "ShareExtensionTarget" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Models/Models.swift,
-				Shared/PendingBookmarkPayload.swift,
-				Shared/SharedMediaStore.swift,
-			);
-			target = 96A757992F01CA3300DBB160 /* ShareExtensionTarget */;
-		};
 		96BE5ED72F03688900B69E7E /* Exceptions for "ShareExtensionTarget" folder in "ShareExtensionTarget" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -70,9 +60,6 @@
 		};
 		96AFA3132EFB9F41008A91D1 /* tuck */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				96225FB62F0F375E0063F45A /* Exceptions for "tuck" folder in "ShareExtensionTarget" target */,
-			);
 			path = tuck;
 			sourceTree = "<group>";
 		};
@@ -90,7 +77,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				963F1F462F10314800FA1821 /* OpenAI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -159,7 +145,6 @@
 			);
 			name = tuck;
 			packageProductDependencies = (
-				963F1F452F10314800FA1821 /* OpenAI */,
 			);
 			productName = hankim;
 			productReference = 96AFA3112EFB9F41008A91D1 /* tuck.app */;
@@ -192,9 +177,6 @@
 			);
 			mainGroup = 96AFA3082EFB9F41008A91D1;
 			minimizedProjectReferenceProxies = 1;
-			packageReferences = (
-				963F1F442F10314800FA1821 /* XCRemoteSwiftPackageReference "OpenAI" */,
-			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 96AFA3122EFB9F41008A91D1 /* Products */;
 			projectDirPath = "";
@@ -529,25 +511,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		963F1F442F10314800FA1821 /* XCRemoteSwiftPackageReference "OpenAI" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/MacPaw/OpenAI.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.4.7;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		963F1F452F10314800FA1821 /* OpenAI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 963F1F442F10314800FA1821 /* XCRemoteSwiftPackageReference "OpenAI" */;
-			productName = OpenAI;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 96AFA3092EFB9F41008A91D1 /* Project object */;
 }
