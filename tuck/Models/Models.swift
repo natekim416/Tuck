@@ -1,11 +1,17 @@
-import SwiftUI
+import Foundation
 
 struct Bookmark: Identifiable, Codable, Hashable {
     let id: UUID
+
+    // Core
     var title: String
-    var url: String
-    var imageURL: String?
     var type: BookmarkType
+
+    var url: String?                 // for link-like items
+    var imageURL: String?            // remote preview image (optional, keep for now)
+    var assets: [BookmarkAsset]      // local files (photos, videos, pdfs, eml, etc.)
+
+    // Existing metadata
     var estimatedReadTime: Int
     var estimatedSkimTime: Int
     var notes: String
@@ -19,27 +25,133 @@ struct Bookmark: Identifiable, Codable, Hashable {
     var savedByCount: Int
     var keyQuote: String?
     var opposingViews: [OpposingView]
-    
-    init(id: UUID = UUID(), title: String, url: String, imageURL: String? = nil,
-         type: BookmarkType, estimatedReadTime: Int = 5, estimatedSkimTime: Int = 2,
-         notes: String = "", aiSummary: String = "", tags: [String] = [],
-         savedByCount: Int = 0, keyQuote: String? = nil, opposingViews: [OpposingView] = []) {
+
+    // Convenience helpers to reduce callsite pain
+    var urlString: String { url?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
+    var hasURL: Bool { !urlString.isEmpty }
+    var hasAssets: Bool { !assets.isEmpty }
+    var primaryAsset: BookmarkAsset? { assets.first }
+
+    init(
+        id: UUID = UUID(),
+        title: String,
+        url: String? = nil,
+        imageURL: String? = nil,
+        type: BookmarkType,
+        assets: [BookmarkAsset] = [],
+        estimatedReadTime: Int = 0,
+        estimatedSkimTime: Int = 0,
+        notes: String = "",
+        aiSummary: String = "",
+        tags: [String] = [],
+        savedByCount: Int = 0,
+        keyQuote: String? = nil,
+        opposingViews: [OpposingView] = []
+    ) {
         self.id = id
         self.title = title
         self.url = url
         self.imageURL = imageURL
         self.type = type
+        self.assets = assets
         self.estimatedReadTime = estimatedReadTime
         self.estimatedSkimTime = estimatedSkimTime
         self.notes = notes
         self.aiSummary = aiSummary
         self.savedDate = Date()
+        self.lastViewed = nil
         self.tags = tags
         self.isCompleted = false
+        self.reminderDate = nil
+        self.reminderContext = nil
         self.savedByCount = savedByCount
         self.keyQuote = keyQuote
         self.opposingViews = opposingViews
     }
+
+    // Backward-friendly Codable (so old saved data doesn’t crash when you add assets / make url optional)
+    enum CodingKeys: String, CodingKey {
+        case id, title, url, imageURL, type, assets
+        case estimatedReadTime, estimatedSkimTime, notes, aiSummary, savedDate, lastViewed, tags, isCompleted
+        case reminderDate, reminderContext, savedByCount, keyQuote, opposingViews
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try c.decode(UUID.self, forKey: .id)
+        title = try c.decode(String.self, forKey: .title)
+        type = (try? c.decode(BookmarkType.self, forKey: .type)) ?? .other
+
+        // url becomes nil if empty
+        let rawURL = try c.decodeIfPresent(String.self, forKey: .url)
+        let trimmed = rawURL?.trimmingCharacters(in: .whitespacesAndNewlines)
+        url = (trimmed?.isEmpty == false) ? trimmed : nil
+
+        imageURL = try c.decodeIfPresent(String.self, forKey: .imageURL)
+        assets = try c.decodeIfPresent([BookmarkAsset].self, forKey: .assets) ?? []
+
+        estimatedReadTime = try c.decodeIfPresent(Int.self, forKey: .estimatedReadTime) ?? 0
+        estimatedSkimTime = try c.decodeIfPresent(Int.self, forKey: .estimatedSkimTime) ?? 0
+        notes = try c.decodeIfPresent(String.self, forKey: .notes) ?? ""
+        aiSummary = try c.decodeIfPresent(String.self, forKey: .aiSummary) ?? ""
+        savedDate = try c.decodeIfPresent(Date.self, forKey: .savedDate) ?? Date()
+        lastViewed = try c.decodeIfPresent(Date.self, forKey: .lastViewed)
+
+        tags = try c.decodeIfPresent([String].self, forKey: .tags) ?? []
+        isCompleted = try c.decodeIfPresent(Bool.self, forKey: .isCompleted) ?? false
+        reminderDate = try c.decodeIfPresent(Date.self, forKey: .reminderDate)
+        reminderContext = try c.decodeIfPresent(ReminderContext.self, forKey: .reminderContext)
+
+        savedByCount = try c.decodeIfPresent(Int.self, forKey: .savedByCount) ?? 0
+        keyQuote = try c.decodeIfPresent(String.self, forKey: .keyQuote)
+        opposingViews = try c.decodeIfPresent([OpposingView].self, forKey: .opposingViews) ?? []
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+
+        try c.encode(id, forKey: .id)
+        try c.encode(title, forKey: .title)
+        try c.encode(type, forKey: .type)
+
+        try c.encodeIfPresent(url, forKey: .url)
+        try c.encodeIfPresent(imageURL, forKey: .imageURL)
+        try c.encode(assets, forKey: .assets)
+
+        try c.encode(estimatedReadTime, forKey: .estimatedReadTime)
+        try c.encode(estimatedSkimTime, forKey: .estimatedSkimTime)
+        try c.encode(notes, forKey: .notes)
+        try c.encode(aiSummary, forKey: .aiSummary)
+        try c.encode(savedDate, forKey: .savedDate)
+        try c.encodeIfPresent(lastViewed, forKey: .lastViewed)
+
+        try c.encode(tags, forKey: .tags)
+        try c.encode(isCompleted, forKey: .isCompleted)
+        try c.encodeIfPresent(reminderDate, forKey: .reminderDate)
+        try c.encodeIfPresent(reminderContext, forKey: .reminderContext)
+
+        try c.encode(savedByCount, forKey: .savedByCount)
+        try c.encodeIfPresent(keyQuote, forKey: .keyQuote)
+        try c.encode(opposingViews, forKey: .opposingViews)
+    }
+}
+
+
+struct BookmarkAsset: Identifiable, Codable, Hashable {
+    var id: UUID = UUID()
+
+    //path inside the app ("A1B2C3.jpg")
+    var relativePath: String
+
+    //optional thumbnail for fast grid rendering
+    var thumbnailRelativePath: String?
+
+    //uniform type identifiers
+    var uti: String
+
+    var originalFilename: String?
+    var createdAt: Date = Date()
 }
 
 struct OpposingView: Identifiable, Codable, Hashable {
@@ -56,15 +168,18 @@ struct OpposingView: Identifiable, Codable, Hashable {
     }
 }
 
-enum BookmarkType: String, Codable, CaseIterable {
+enum BookmarkType: String, Codable, CaseIterable, Hashable {
     case article = "Article"
     case video = "Video"
     case product = "Product"
     case tweet = "Tweet"
     case quote = "Quote"
     case document = "Document"
+    case photo = "Photo"
+    case screenshot = "Screenshot"
+    case email = "Email"
     case other = "Other"
-    
+
     var icon: String {
         switch self {
         case .article: return "doc.text"
@@ -73,10 +188,35 @@ enum BookmarkType: String, Codable, CaseIterable {
         case .tweet: return "message"
         case .quote: return "quote.bubble"
         case .document: return "doc"
+        case .photo: return "photo"
+        case .screenshot: return "rectangle.dashed"
+        case .email: return "envelope"
         case .other: return "link"
         }
     }
+
+    /// Use this to drive AddBookmarkView validation
+    var prefersURL: Bool {
+        switch self {
+        case .article, .product, .tweet:
+            return true
+        case .video, .document, .other:
+            return true // can be URL OR file; you choose UI behavior
+        case .photo, .screenshot, .email, .quote:
+            return false
+        }
+    }
+
+    var prefersAssets: Bool {
+        switch self {
+        case .photo, .screenshot, .email, .document, .video:
+            return true
+        default:
+            return false
+        }
+    }
 }
+
 
 enum ReminderContext: String, Codable, CaseIterable {
     case atHome = "At Home"

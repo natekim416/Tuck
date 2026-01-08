@@ -129,57 +129,104 @@ class ShareViewController: UIViewController {
         ])
     }
     
-    private func extractSharedContent() {
-        guard let extensionItem = extensionContext?.inputItems.first as? NSExtensionItem,
-              let itemProvider = extensionItem.attachments?.first else {
-            return
-        }
-        
-        // Handle URL
-        if itemProvider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
-            itemProvider.loadItem(forTypeIdentifier: UTType.url.identifier, options: nil) { [weak self] (item, error) in
-                if let url = item as? URL {
-                    DispatchQueue.main.async {
-                        self?.sharedURL = url.absoluteString
-                        self?.urlLabel.text = url.absoluteString
-                        self?.fetchMetadata(for: url)
-                        self?.suggestFolder(for: url)
-                    }
-                }
-            }
-        }
-        
-        // Handle Text
-        if itemProvider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
-            itemProvider.loadItem(forTypeIdentifier: UTType.plainText.identifier, options: nil) { [weak self] (item, error) in
-                if let text = item as? String {
-                    DispatchQueue.main.async {
-                        self?.sharedText = text
-                        if self?.sharedURL == nil {
-                            self?.urlLabel.text = text
-                        }
-                    }
-                }
-            }
-        }
-        
-        // Handle Image
-        if itemProvider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
-            itemProvider.loadItem(forTypeIdentifier: UTType.image.identifier, options: nil) { [weak self] (item, error) in
-                if let url = item as? URL, let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
-                    DispatchQueue.main.async {
-                        self?.sharedImage = image
-                        self?.previewImageView.image = image
-                    }
-                } else if let image = item as? UIImage {
-                    DispatchQueue.main.async {
-                        self?.sharedImage = image
-                        self?.previewImageView.image = image
-                    }
+    private func loadURL(from provider: NSItemProvider) {
+        provider.loadItem(forTypeIdentifier: UTType.url.identifier, options: nil) { [weak self] item, _ in
+            guard let self else { return }
+            if let url = item as? URL {
+                DispatchQueue.main.async {
+                    self.sharedURL = url.absoluteString
+                    self.urlLabel.text = self.sharedURL
+                    self.fetchMetadata(for: url)
+                    self.suggestFolder(for: url)
                 }
             }
         }
     }
+
+    private func loadText(from provider: NSItemProvider) {
+        provider.loadItem(forTypeIdentifier: UTType.plainText.identifier, options: nil) { [weak self] item, _ in
+            guard let self else { return }
+            if let text = item as? String {
+                DispatchQueue.main.async {
+                    self.sharedText = text
+                    self.urlLabel.text = text
+                    self.previewImageView.image = UIImage(systemName: "note.text")
+                }
+            }
+        }
+    }
+
+    private func loadImage(from provider: NSItemProvider) {
+        provider.loadItem(forTypeIdentifier: UTType.image.identifier, options: nil) { [weak self] item, _ in
+            guard let self else { return }
+
+            var image: UIImage?
+            if let ui = item as? UIImage { image = ui }
+            else if let url = item as? URL, let data = try? Data(contentsOf: url) { image = UIImage(data: data) }
+
+            DispatchQueue.main.async {
+                self.sharedImage = image
+                self.previewImageView.image = image ?? UIImage(systemName: "photo")
+                self.urlLabel.text = image != nil ? "Image" : "Image (unreadable)"
+            }
+        }
+    }
+
+    private func loadFileURL(from provider: NSItemProvider) {
+        provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { [weak self] item, _ in
+            guard let self else { return }
+            if let url = item as? URL {
+                DispatchQueue.main.async {
+                    self.urlLabel.text = url.lastPathComponent
+                    self.previewImageView.image = UIImage(systemName: "doc")
+                    // stash it as text for now (we’ll copy it during save)
+                    self.sharedText = url.absoluteString
+                }
+            }
+        }
+    }
+
+    private func loadFileLike(from provider: NSItemProvider, uti: UTType) {
+        provider.loadItem(forTypeIdentifier: uti.identifier, options: nil) { [weak self] item, _ in
+            guard let self else { return }
+
+            DispatchQueue.main.async {
+                self.previewImageView.image = UIImage(systemName: "doc")
+                self.urlLabel.text = uti == .message ? "Email" : "File"
+                // We can only reliably persist this at save-time; keep a hint
+                // If item is URL/Data we’ll handle it in saveBookmark()
+            }
+        }
+    }
+    
+    private func extractSharedContent() {
+        guard let item = extensionContext?.inputItems.first as? NSExtensionItem,
+              let providers = item.attachments, !providers.isEmpty else { return }
+
+        // Pick the “best” provider: URL > image > movie > file > text > data/message
+        if let p = providers.first(where: { $0.hasItemConformingToTypeIdentifier(UTType.url.identifier) }) {
+            loadURL(from: p); return
+        }
+        if let p = providers.first(where: { $0.hasItemConformingToTypeIdentifier(UTType.image.identifier) }) {
+            loadImage(from: p); return
+        }
+        if let p = providers.first(where: { $0.hasItemConformingToTypeIdentifier(UTType.movie.identifier) }) {
+            loadFileLike(from: p, uti: .movie); return
+        }
+        if let p = providers.first(where: { $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) }) {
+            loadFileURL(from: p); return
+        }
+        if let p = providers.first(where: { $0.hasItemConformingToTypeIdentifier(UTType.message.identifier) }) {
+            loadFileLike(from: p, uti: .message); return
+        }
+        if let p = providers.first(where: { $0.hasItemConformingToTypeIdentifier(UTType.data.identifier) }) {
+            loadFileLike(from: p, uti: .data); return
+        }
+        if let p = providers.first(where: { $0.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) }) {
+            loadText(from: p); return
+        }
+    }
+
     
     private func fetchMetadata(for url: URL) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
@@ -309,29 +356,68 @@ class ShareViewController: UIViewController {
     }
     
     @objc private func saveBookmark() {
-        guard let url = sharedURL else {
-            showError("No URL to save")
+        let folderName = folderButton.configuration?.title ?? "Bookmarks"
+
+        // Decide type (you can improve this logic later)
+        let typeRaw: String = {
+            if sharedImage != nil { return "Photo" }
+            if let u = sharedURL { return determineBookmarkType(from: u).capitalized } // "Video" etc
+            if sharedText != nil { return "Quote" }
+            return "Other"
+        }()
+
+        // 1) URL share
+        if let url = sharedURL, !url.isEmpty {
+            let payload = PendingBookmarkPayload(
+                kind: .url,
+                title: extractTitle(from: url),
+                folder: folderName,
+                typeRaw: typeRaw,
+                url: url
+            )
+            PendingStore.append(payload)
+            showSuccess()
             return
         }
-        
-        let bookmarkData: [String: Any] = [
-            "url": url,
-            "title": extractTitle(from: url),
-            "folder": folderButton.configuration?.title ?? "Bookmarks",
-            "timestamp": Date().timeIntervalSince1970,
-            "type": determineBookmarkType(from: url)
-        ]
-        
-        // Save to App Group shared container
-        if let sharedDefaults = UserDefaults(suiteName: "group.com.bookmarkapp.shared") {
-            var pendingBookmarks = sharedDefaults.array(forKey: "pendingBookmarks") as? [[String: Any]] ?? []
-            pendingBookmarks.append(bookmarkData)
-            sharedDefaults.set(pendingBookmarks, forKey: "pendingBookmarks")
-            sharedDefaults.synchronize()
+
+        // 2) Image share
+        if let img = sharedImage {
+            do {
+                let asset = try SharedMediaStore.saveJPEG(image: img)
+                let payload = PendingBookmarkPayload(
+                    kind: .asset,
+                    title: "Photo",
+                    folder: folderName,
+                    typeRaw: typeRaw,
+                    assetRelativePath: asset.relativePath,
+                    assetUTI: asset.uti,
+                    assetFilename: asset.originalFilename
+                )
+                PendingStore.append(payload)
+                showSuccess()
+            } catch {
+                showError("Failed to save image")
+            }
+            return
         }
-        
-        showSuccess()
+
+        // 3) Plain text share
+        if let text = sharedText, !text.isEmpty {
+            let payload = PendingBookmarkPayload(
+                kind: .text,
+                title: "Text",
+                folder: folderName,
+                typeRaw: "Quote",
+                text: text
+            )
+            PendingStore.append(payload)
+            showSuccess()
+            return
+        }
+
+        showError("Nothing to save")
     }
+
     
     private func extractTitle(from urlString: String) -> String {
         guard let url = URL(string: urlString) else { return urlString }

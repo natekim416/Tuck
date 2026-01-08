@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct BookmarkCard: View {
     let bookmark: Bookmark
@@ -9,29 +10,38 @@ struct BookmarkCard: View {
     var body: some View {
         Button(action: { showingDetail = true }) {
             VStack(alignment: .leading, spacing: 8) {
-                if let imageURL = bookmark.imageURL {
-                    AsyncImage(url: URL(string: imageURL)) { image in
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
+                if let imageURL = bookmark.imageURL,
+                   let url = URL(string: imageURL) {
+                    AsyncImage(url: url) { image in
+                        image.resizable().aspectRatio(contentMode: .fill)
                     } placeholder: {
                         Rectangle()
-                            .fill(LinearGradient(colors: [.blue.opacity(0.3), .purple.opacity(0.3)], 
-                                               startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .fill(LinearGradient(colors: [.blue.opacity(0.3), .purple.opacity(0.3)],
+                                                 startPoint: .topLeading, endPoint: .bottomTrailing))
                     }
                     .frame(height: 120)
                     .clipped()
                     .cornerRadius(8)
-                    .overlay(
-                        bookmark.isCompleted ? 
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.title)
-                            .foregroundColor(.green)
-                            .padding(8)
-                        : nil,
-                        alignment: .topTrailing
-                    )
+
+                } else if let uiImage = loadPrimaryAssetImage() {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(height: 120)
+                        .clipped()
+                        .cornerRadius(8)
+
+                } else if bookmark.hasAssets {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.gray.opacity(0.15))
+                            .frame(height: 120)
+                        Image(systemName: bookmark.type.icon)
+                            .font(.title2)
+                            .foregroundColor(.secondary)
+                    }
                 }
+
                 
                 HStack {
                     Image(systemName: bookmark.type.icon)
@@ -72,5 +82,20 @@ struct BookmarkCard: View {
         .sheet(isPresented: $showingDetail) {
             BookmarkDetailView(bookmark: bookmark, viewModel: viewModel, folder: folder)
         }
+    }
+    
+    private func loadPrimaryAssetImage() -> UIImage? {
+        guard let asset = bookmark.primaryAsset else { return nil }
+
+        let isImage: Bool = {
+            if let ut = UTType(asset.uti) { return ut.conforms(to: .image) }
+            let lower = asset.relativePath.lowercased()
+            return lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") || lower.hasSuffix(".png")
+        }()
+
+        guard isImage else { return nil }
+
+        let fileURL = SharedMediaStore.absoluteURL(for: asset.relativePath)
+        return UIImage(contentsOfFile: fileURL.path)
     }
 }
