@@ -11,6 +11,6 @@ jobs:
             -project Tuck.xcodeproj \
             -scheme hankim \
             -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 15' \
+            -destination 'platform=iOS Simulator,id=880D9ABD-8DC6-4084-88CB-136005599114' \
             CODE_SIGNING_ALLOWED=NO \
             build
