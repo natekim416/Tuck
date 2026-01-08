@@ -40,6 +40,15 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		96225FB62F0F375E0063F45A /* Exceptions for "tuck" folder in "ShareExtensionTarget" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Models/Models.swift,
+				Shared/PendingBookmarkPayload.swift,
+				Shared/SharedMediaStore.swift,
+			);
+			target = 96A757992F01CA3300DBB160 /* ShareExtensionTarget */;
+		};
 		96BE5ED72F03688900B69E7E /* Exceptions for "ShareExtensionTarget" folder in "ShareExtensionTarget" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -60,6 +69,9 @@
 		};
 		96AFA3132EFB9F41008A91D1 /* tuck */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				96225FB62F0F375E0063F45A /* Exceptions for "tuck" folder in "ShareExtensionTarget" target */,
+			);
 			path = tuck;
 			sourceTree = "<group>";
 		};

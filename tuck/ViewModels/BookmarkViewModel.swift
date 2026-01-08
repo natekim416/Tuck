@@ -17,11 +17,11 @@ class BookmarkViewModel: ObservableObject {
     func loadSampleData() {
         let codingBookmarks = [
             Bookmark(
-                title: "SwiftUI Complete Guide", 
-                url: "https://example.com/swiftui", 
+                title: "SwiftUI Complete Guide",
+                url: "https://example.com/swiftui",
                 imageURL: "https://picsum.photos/400/300?1",
-                type: .article, 
-                estimatedReadTime: 15, 
+                type: .article,
+                estimatedReadTime: 15,
                 estimatedSkimTime: 5,
                 aiSummary: "Comprehensive guide covering SwiftUI basics to advanced topics.",
                 tags: ["swift", "ios", "tutorial"],
@@ -46,7 +46,7 @@ class BookmarkViewModel: ObservableObject {
         
         folders = [
             Folder(
-                name: "Learn to Code", 
+                name: "Learn to Code",
                 description: "iOS development resources",
                 bookmarks: codingBookmarks,
                 isPublic: true,
@@ -154,58 +154,40 @@ class BookmarkViewModel: ObservableObject {
     }
     
     func syncPendingBookmarks() {
-            guard let sharedDefaults = UserDefaults(suiteName: "group.com.bookmarkapp.shared"),
-                  let pendingData = sharedDefaults.array(forKey: "pendingBookmarks") as? [[String: Any]],
-                  !pendingData.isEmpty else {
-                return
-            }
-            
-            for data in pendingData {
-                guard let urlString = data["url"] as? String,
-                      let title = data["title"] as? String,
-                      let folderName = data["folder"] as? String,
-                      let typeString = data["type"] as? String else {
-                    continue
-                }
-                
-                let type = BookmarkType(rawValue: typeString.capitalized) ?? .other
-                let bookmark = Bookmark(
-                    title: title,
-                    url: urlString,
-                    type: type,
-                    estimatedReadTime: estimateReadTime(for: type),
-                    estimatedSkimTime: estimateSkimTime(for: type),
-                    aiSummary: "Added from share sheet"
-                )
-                
-                if let existingFolder = folders.first(where: { $0.name == folderName }) {
-                    addBookmark(bookmark, to: existingFolder)
-                } else {
-                    let newFolder = Folder(name: folderName, color: "blue", icon: "folder")
-                    createFolder(newFolder)
-                    if let createdFolder = folders.first(where: { $0.name == folderName }) {
-                        addBookmark(bookmark, to: createdFolder)
-                    }
-                }
-            }
-            
-            sharedDefaults.removeObject(forKey: "pendingBookmarks")
-            sharedDefaults.synchronize()
-        }
+        let items = PendingStore.load()
+        guard !items.isEmpty else { return }
         
-        private func estimateReadTime(for type: BookmarkType) -> Int {
-            switch type {
-            case .article: return 8
-            case .video: return 15
-            case .product: return 5
-            case .tweet: return 1
-            case .quote: return 1
-            case .document: return 20
-            case .other: return 5
+        for item in items {
+            let type = BookmarkType(rawValue: item.typeRaw) ?? .other
+            
+            var assets: [BookmarkAsset] = []
+            if let rel = item.assetRelativePath, let uti = item.assetUTI {
+                assets = [BookmarkAsset(relativePath: rel, thumbnailRelativePath: nil, uti: uti, originalFilename: item.assetFilename)]
+            }
+            
+            let bookmark = Bookmark(
+                title: item.title,
+                url: item.url,                 // optional
+                imageURL: nil,
+                type: type,
+                assets: assets,
+//                estimatedReadTime: estimateReadTime(for: type),
+//                estimatedSkimTime: estimateSkimTime(for: type),
+                aiSummary: "Added from share sheet"
+            )
+            
+            if let existingFolder = folders.first(where: { $0.name == item.folder }) {
+                addBookmark(bookmark, to: existingFolder)
+            } else {
+                let newFolder = Folder(name: item.folder, color: "blue", icon: "folder")
+                createFolder(newFolder)
+                if let created = folders.first(where: { $0.name == item.folder }) {
+                    addBookmark(bookmark, to: created)
+                }
             }
         }
         
-        private func estimateSkimTime(for type: BookmarkType) -> Int {
-            return max(1, estimateReadTime(for: type) / 3)
-        }
+        PendingStore.clear()
     }
+}
+    
