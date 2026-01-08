@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		963F1F462F10314800FA1821 /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 963F1F452F10314800FA1821 /* OpenAI */; };
 		96A757A42F01CA3300DBB160 /* ShareExtensionTarget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 96A7579A2F01CA3300DBB160 /* ShareExtensionTarget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -89,6 +90,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				963F1F462F10314800FA1821 /* OpenAI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -157,6 +159,7 @@
 			);
 			name = tuck;
 			packageProductDependencies = (
+				963F1F452F10314800FA1821 /* OpenAI */,
 			);
 			productName = hankim;
 			productReference = 96AFA3112EFB9F41008A91D1 /* tuck.app */;
@@ -189,6 +192,9 @@
 			);
 			mainGroup = 96AFA3082EFB9F41008A91D1;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				963F1F442F10314800FA1821 /* XCRemoteSwiftPackageReference "OpenAI" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 96AFA3122EFB9F41008A91D1 /* Products */;
 			projectDirPath = "";
@@ -523,6 +529,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		963F1F442F10314800FA1821 /* XCRemoteSwiftPackageReference "OpenAI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/MacPaw/OpenAI.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.4.7;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		963F1F452F10314800FA1821 /* OpenAI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 963F1F442F10314800FA1821 /* XCRemoteSwiftPackageReference "OpenAI" */;
+			productName = OpenAI;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 96AFA3092EFB9F41008A91D1 /* Project object */;
 }
