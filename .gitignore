@@ -2,3 +2,4 @@
 # Xcode user data
 xcuserdata/
 *.xcuserstate
+.DS_Store

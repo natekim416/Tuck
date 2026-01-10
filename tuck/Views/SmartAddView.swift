@@ -5,7 +5,7 @@ struct SmartAddItemView: View {
     @State private var analysis: AIAnalysisResult?
     @State private var isAnalyzing = false
     
-    let aiService = SmartSortService(apiKey: )
+    let aiService = SmartSortService(apiKey: "apikey")
     
     var body: some View {
         VStack(spacing: 20) {
