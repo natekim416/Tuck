@@ -6,11 +6,69 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - run: |
+      - name: Build (generic iOS Simulator)
+        run: |
           xcodebuild \
             -project Tuck.xcodeproj \
             -scheme hankim \
             -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=Any iOS Simulator Device' \
+            -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
             build
+
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Optional: select Xcode here too (same as build job)
+
+      - name: Create & boot iOS Simulator
+        run: |
+          echo "== Available runtimes =="
+          xcrun simctl list runtimes
+
+          # Grab the newest installed iOS simulator runtime identifier
+          RUNTIME_ID=$(
+            xcrun simctl list runtimes |
+            grep -E "iOS.*com.apple.CoreSimulator.SimRuntime.iOS" |
+            tail -1 |
+            awk '{print $NF}'
+          )
+
+          if [ -z "$RUNTIME_ID" ]; then
+            echo "ERROR: No iOS Simulator runtimes installed on this runner/Xcode."
+            exit 1
+          fi
+
+          echo "Using runtime: $RUNTIME_ID"
+
+          # Create a simulator named CI-iPhone (safe if it already exists)
+          xcrun simctl create "CI-iPhone" "com.apple.CoreSimulator.SimDeviceType.iPhone-15" "$RUNTIME_ID" || true
+
+          UDID=$(
+            xcrun simctl list devices |
+            grep "CI-iPhone" |
+            head -1 |
+            awk -F '[()]' '{print $2}'
+          )
+
+          if [ -z "$UDID" ]; then
+            echo "ERROR: Could not find CI-iPhone UDID after creation."
+            exit 1
+          fi
+
+          echo "Booting simulator: $UDID"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+
+          echo "SIM_UDID=$UDID" >> $GITHUB_ENV
+
+      - name: Run tests
+        run: |
+          xcodebuild test \
+            -project Tuck.xcodeproj \
+            -scheme hankim \
+            -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,id=$SIM_UDID" \
+            CODE_SIGNING_ALLOWED=NO
