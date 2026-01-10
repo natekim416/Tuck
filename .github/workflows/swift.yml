@@ -11,6 +11,6 @@ jobs:
             -project Tuck.xcodeproj \
             -scheme hankim \
             -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' \
+            -destination 'platform=iOS Simulator,name=Any iOS Simulator Device' \
             CODE_SIGNING_ALLOWED=NO \
             build
