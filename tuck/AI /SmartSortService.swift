@@ -5,7 +5,7 @@ class SmartSortService {
     private let client: OpenAI
     
     init(apiKey: String) {
-        self.client = OpenAI(apiToken: apiKey)
+        self.client = OpenAI(apiToken: "apiKeyfiller")
     }
     
     func analyzeContent(text: String, userExamples: String = "") async throws -> AIAnalysisResult {
@@ -23,23 +23,24 @@ class SmartSortService {
         
         
         
-        let query = ChatQuery(
-            messages: [
-                .init(role: .system, content: systemPrompt),
-                .init(role: .user, content: text)
-            ],
-            model: .gpt5_mini,
-            responseFormat: .jsonObject
-        )
-        
-        let result = try await client.chats(query: query)
-        
-        // Decode the JSON string into our Swift Struct
-        guard let jsonString = result.choices.first?.message.content,
-              let data = jsonString.data(using: .utf8) else {
-            throw URLError(.cannotParseResponse)
-        }
-        
-        return try JSONDecoder().decode(AIAnalysisResult.self, from: data)
+//        let query = ChatQuery(
+//            messages: [
+//                .init(role: .system, content: systemPrompt),
+//                .init(role: .user, content: text)
+//            ],
+//            model: .gpt4oMini,
+//            responseFormat: .jsonObject
+//        )
+//        
+//        let result = try await client.chats(query: query)
+//        
+//        // Decode the JSON string into our Swift Struct
+//        guard let jsonString = result.choices.first?.message.content,
+//              let data = jsonString.data(using: .utf8) else {
+//            throw URLError(.cannotParseResponse)
+//        }
+//        
+//        return try JSONDecoder().decode(AIAnalysisResult.self, from: data)
+        return AIAnalysisResult(folders: <#T##[String]#>, summary: <#T##String#>)
     }
 }
