@@ -3,3 +3,4 @@
 xcuserdata/
 *.xcuserstate
 .DS_Store
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved

@@ -50,7 +50,7 @@ struct SearchEmptyState: View {
                 Text("Try searching:")
                     .font(.headline)
                 
-                ForEach(["best ways to learn Swift", "productivity tips", "design inspiration"], id: \.self) { example in
+                ForEach(["best places to study", "productivity tips", "design inspiration"], id: \.self) { example in
                     Button(action: { onExampleTap(example) }) {
                         HStack {
                             Image(systemName: "magnifyingglass")

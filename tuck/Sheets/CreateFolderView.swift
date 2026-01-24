@@ -48,7 +48,7 @@ struct CreateFolderView: View {
                         HStack(spacing: 15) {
                             ForEach(colors, id: \.self) { color in
                                 Circle()
-                                    .fill(Color(color))
+                                    .fill(Color.fromFolderName(color))
                                     .frame(width: 40, height: 40)
                                     .overlay(
                                         Circle()
