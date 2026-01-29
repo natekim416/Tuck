@@ -80,7 +80,8 @@ struct FolderDetailView: View {
             }
         }
         .sheet(isPresented: $showingAddBookmark) {
-            AddBookmarkView(viewModel: viewModel, selectedFolder: localFolder)
+//            AddBookmarkView(viewModel: viewModel, selectedFolder: localFolder)
+              AddBookmarkView()
         }
         .onAppear {
             if let updated = viewModel.folders.first(where: { $0.id == folder.id }) {

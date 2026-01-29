@@ -1,46 +1,26 @@
-import OpenAI
 import Foundation
 
 class SmartSortService {
-    private let client: OpenAI
+    static let shared = SmartSortService()
     
-    init(apiKey: String) {
-        self.client = OpenAI(apiToken: "apiKeyfiller")
+    private init() {}
+    
+    /// Analyze text using the TuckServer backend
+    func analyze(text: String, userExamples: String? = nil) async throws -> AIAnalysisResult {
+        // Use analyzeBookmark which sends to /smart-sort endpoint
+        return try await TuckServerAPI.shared.analyzeBookmark(
+            url: text,
+            title: nil,
+            notes: userExamples
+        )
     }
     
-    func analyzeContent(text: String, userExamples: String = "") async throws -> AIAnalysisResult {
-        let systemPrompt = """
-        You are a smart filing assistant. Analyze the input text/URL and categorize it.
-        
-        Rules:
-        1. Extract relevant TOPICS as folders (e.g., "College", "Duke").
-        2. Identify DEADLINES (format: YYYY-MM-DD).
-        3. Identify PRICE if present (number only).
-        4. Return STRICT JSON.
-        
-        \(userExamples.isEmpty ? "" : "Here is how the user previously organized similar items:\n" + userExamples)
-        """
-        
-        
-        
-//        let query = ChatQuery(
-//            messages: [
-//                .init(role: .system, content: systemPrompt),
-//                .init(role: .user, content: text)
-//            ],
-//            model: .gpt4oMini,
-//            responseFormat: .jsonObject
-//        )
-//        
-//        let result = try await client.chats(query: query)
-//        
-//        // Decode the JSON string into our Swift Struct
-//        guard let jsonString = result.choices.first?.message.content,
-//              let data = jsonString.data(using: .utf8) else {
-//            throw URLError(.cannotParseResponse)
-//        }
-//        
-//        return try JSONDecoder().decode(AIAnalysisResult.self, from: data)
-        return AIAnalysisResult(folders: <#T##[String]#>, summary: <#T##String#>)
+    /// Analyze and save bookmark automatically to the right folder
+    func analyzeAndSave(url: String, title: String? = nil, notes: String? = nil) async throws -> ServerSavedBookmark {
+        return try await TuckServerAPI.shared.analyzeAndSaveBookmark(
+            url: url,
+            title: title,
+            notes: notes
+        )
     }
 }

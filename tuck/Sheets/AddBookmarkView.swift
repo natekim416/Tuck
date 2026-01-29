@@ -1,68 +1,91 @@
 import SwiftUI
 
 struct AddBookmarkView: View {
-    @ObservedObject var viewModel: BookmarkViewModel
-    var selectedFolder: Folder?
-    
-    @Environment(\.presentationMode) var presentationMode
-    @State private var url: String = ""
-    @State private var title: String = ""
-    @State private var notes: String = ""
-    @State private var selectedType: BookmarkType = .article
-    @State private var selectedFolderId: UUID?
-    @State private var tags: String = ""
-    @State private var isProcessing = false
+    @Environment(\.dismiss) var dismiss
+    @State private var url = ""
+    @State private var title = ""
+    @State private var notes = ""
+    @State private var isAnalyzing = false
+    @State private var isSaving = false
+    @State private var showingPreview = false
+    @State private var analysisResult: AIAnalysisResult?
+    @State private var errorMessage: String?
     
     var body: some View {
         NavigationView {
             Form {
-                Section("Bookmark Details") {
+                Section(header: Text("Bookmark Details")) {
                     TextField("URL", text: $url)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
                         .keyboardType(.URL)
-                        .autocapitalization(.none)
                     
-                    TextField("Title", text: $title)
+                    TextField("Title (optional)", text: $title)
                     
-                    Picker("Type", selection: $selectedType) {
-                        ForEach(BookmarkType.allCases, id: \.self) { type in
-                            HStack {
-                                Image(systemName: type.icon)
-                                Text(type.rawValue)
-                            }
-                            .tag(type)
-                        }
-                    }
+                    TextEditor(text: $notes)
+                        .frame(height: 100)
                 }
                 
-                Section("Folder") {
-                    Picker("Save to", selection: $selectedFolderId) {
-                        ForEach(viewModel.folders) { folder in
-                            HStack {
-                                Image(systemName: folder.icon)
-                                    .foregroundColor(Color(folder.color))
-                                Text(folder.name)
-                            }
-                            .tag(folder.id as UUID?)
-                        }
-                    }
-                }
-                
-                Section("Optional") {
-                    TextField("Tags (comma separated)", text: $tags)
-                    TextField("Notes", text: $notes, axis: .vertical)
-                        .lineLimit(3...6)
-                }
-                
-                if isProcessing {
+                if let error = errorMessage {
                     Section {
-                        HStack {
-                            Spacer()
-                            ProgressView()
-                            Text("Processing...")
-                                .foregroundColor(.secondary)
-                            Spacer()
+                        Text(error)
+                            .foregroundColor(.red)
+                            .font(.caption)
+                    }
+                }
+                
+                if let result = analysisResult {
+                    Section(header: Text("AI Analysis Preview")) {
+                        if !result.folders.isEmpty {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Will be saved to:")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                
+                                ForEach(result.folders, id: \.self) { folder in
+                                    HStack {
+                                        Image(systemName: "folder.fill")
+                                            .foregroundColor(.blue)
+                                        Text(folder)
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if let deadline = result.deadline {
+                            Label(deadline, systemImage: "calendar")
+                        }
+                        
+                        if let price = result.price {
+                            Label("$\(price, specifier: "%.2f")", systemImage: "dollarsign.circle")
                         }
                     }
+                }
+                
+                Section {
+                    Button(action: analyzePreview) {
+                        HStack {
+                            if isAnalyzing {
+                                ProgressView()
+                            } else {
+                                Image(systemName: "sparkles")
+                                Text("Preview Smart Sort")
+                            }
+                        }
+                    }
+                    .disabled(url.isEmpty || isAnalyzing || isSaving)
+                    
+                    Button(action: saveBookmark) {
+                        HStack {
+                            if isSaving {
+                                ProgressView()
+                            } else {
+                                Image(systemName: "arrow.down.circle.fill")
+                                Text("Save & Auto-Sort")
+                            }
+                        }
+                    }
+                    .disabled(url.isEmpty || isSaving || isAnalyzing)
                 }
             }
             .navigationTitle("Add Bookmark")
@@ -70,60 +93,65 @@ struct AddBookmarkView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
-                        presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        saveBookmark()
-                    }
-                    .disabled(url.isEmpty || selectedFolderId == nil)
-                }
-            }
-            .onAppear {
-                if let folder = selectedFolder {
-                    selectedFolderId = folder.id
-                } else if let firstFolder = viewModel.folders.first {
-                    selectedFolderId = firstFolder.id
                 }
             }
         }
     }
     
-    private func saveBookmark() {
-        guard let folderId = selectedFolderId,
-              let folder = viewModel.folders.first(where: { $0.id == folderId }) else {
-            return
-        }
+    func analyzePreview() {
+        isAnalyzing = true
+        errorMessage = nil
         
-        isProcessing = true
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            let tagArray = tags.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
-            
-            let bookmark = Bookmark(
-                title: title.isEmpty ? extractTitle(from: url) : title,
-                url: url,
-                imageURL: "https://picsum.photos/400/300?\(Int.random(in: 1...100))",
-                type: selectedType,
-                estimatedReadTime: Int.random(in: 5...20),
-                estimatedSkimTime: Int.random(in: 2...8),
-                notes: notes,
-                aiSummary: "AI-generated summary of this \(selectedType.rawValue.lowercased())",
-                tags: tagArray
-            )
-            
-            viewModel.addBookmark(bookmark, to: folder)
-            isProcessing = false
-            presentationMode.wrappedValue.dismiss()
+        Task {
+            do {
+                let result = try await TuckServerAPI.shared.analyzeBookmark(
+                    url: url,
+                    title: title.isEmpty ? nil : title,
+                    notes: notes.isEmpty ? nil : notes
+                )
+                
+                await MainActor.run {
+                    analysisResult = result
+                    isAnalyzing = false
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = error.localizedDescription
+                    isAnalyzing = false
+                }
+            }
         }
     }
     
-    private func extractTitle(from urlString: String) -> String {
-        guard let url = URL(string: urlString),
-              let host = url.host else {
-            return "Untitled Bookmark"
+    func saveBookmark() {
+        isSaving = true
+        errorMessage = nil
+        
+        Task {
+            do {
+                let saved = try await TuckServerAPI.shared.analyzeAndSaveBookmark(
+                    url: url,
+                    title: title.isEmpty ? nil : title,
+                    notes: notes.isEmpty ? nil : notes
+                )
+                
+                await MainActor.run {
+                    isSaving = false
+                    // Show success message
+                    dismiss()
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = error.localizedDescription
+                    isSaving = false
+                }
+            }
         }
-        return host.replacingOccurrences(of: "www.", with: "").capitalized
     }
+}
+
+#Preview {
+    AddBookmarkView()
 }
