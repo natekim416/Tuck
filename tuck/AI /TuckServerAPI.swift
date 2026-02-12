@@ -74,7 +74,7 @@ class TuckServerAPI {
     
     // MARK: - Folders
     
-    func getFolders() async throws -> [ServerFolder] {
+    func getFolders() async throws -> [Folder] {
         return try await get("/folders", requiresAuth: true)
     }
     
@@ -246,8 +246,8 @@ struct ServerUser: Codable {
 
 struct ServerSavedBookmark: Codable {
     let bookmark: ServerBookmark
-    let folder: ServerFolder
-    let analysis: AIAnalysisResult
+    let folder: Folder?
+    let analysis: AIAnalysisResult?
 }
 
 struct ServerBookmark: Codable, Identifiable {

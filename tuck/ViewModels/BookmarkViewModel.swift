@@ -130,6 +130,15 @@ class BookmarkViewModel: ObservableObject {
     
     func createFolder(_ folder: Folder) {
         folders.append(folder)
+        
+        // Also save to server
+        Task {
+            do {
+                _ = try await TuckServerAPI.shared.createFolder(name: folder.name, color: folder.color)
+            } catch {
+                print("Failed to save folder to server: \(error)")
+            }
+        }
     }
     
     func copyFolder(_ folder: Folder) {

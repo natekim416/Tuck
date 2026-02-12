@@ -268,6 +268,47 @@ struct Folder: Identifiable, Codable, Hashable {
         self.collaborators = collaborators
         self.outcome = outcome
     }
+    
+    // Custom decoder to handle server response with missing fields
+    enum CodingKeys: String, CodingKey {
+        case id, name, description, bookmarks, isPublic, color, icon
+        case createdBy, savedByCount, isPopular, collaborators, outcome
+        case createdAt, user
+    }
+    
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        
+        self.id = try c.decode(UUID.self, forKey: .id)
+        self.name = try c.decode(String.self, forKey: .name)
+        self.description = (try? c.decode(String.self, forKey: .description)) ?? ""
+        self.bookmarks = (try? c.decode([Bookmark].self, forKey: .bookmarks)) ?? []
+        self.isPublic = (try? c.decode(Bool.self, forKey: .isPublic)) ?? false
+        self.color = (try? c.decode(String.self, forKey: .color)) ?? "blue"
+        self.icon = (try? c.decode(String.self, forKey: .icon)) ?? "folder"
+        self.createdBy = (try? c.decode(String.self, forKey: .createdBy)) ?? "You"
+        self.savedByCount = (try? c.decode(Int.self, forKey: .savedByCount)) ?? 0
+        self.isPopular = (try? c.decode(Bool.self, forKey: .isPopular)) ?? false
+        self.collaborators = (try? c.decode([String].self, forKey: .collaborators)) ?? []
+        self.outcome = (try? c.decode(FolderOutcome.self, forKey: .outcome)) ?? .learn
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        
+        try c.encode(id, forKey: .id)
+        try c.encode(name, forKey: .name)
+        try c.encode(description, forKey: .description)
+        try c.encode(bookmarks, forKey: .bookmarks)
+        try c.encode(isPublic, forKey: .isPublic)
+        try c.encode(color, forKey: .color)
+        try c.encode(icon, forKey: .icon)
+        try c.encode(createdBy, forKey: .createdBy)
+        try c.encode(savedByCount, forKey: .savedByCount)
+        try c.encode(isPopular, forKey: .isPopular)
+        try c.encode(collaborators, forKey: .collaborators)
+        try c.encode(outcome, forKey: .outcome)
+    }
 }
 
 enum FolderOutcome: String, Codable, CaseIterable {

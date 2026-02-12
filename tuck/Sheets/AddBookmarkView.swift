@@ -11,6 +11,8 @@ struct AddBookmarkView: View {
     @State private var analysisResult: AIAnalysisResult?
     @State private var errorMessage: String?
     
+    var onBookmarkSaved: (() -> Void)?
+    
     var body: some View {
         NavigationView {
             Form {
@@ -139,7 +141,7 @@ struct AddBookmarkView: View {
                 
                 await MainActor.run {
                     isSaving = false
-                    // Show success message
+                    onBookmarkSaved?()
                     dismiss()
                 }
             } catch {

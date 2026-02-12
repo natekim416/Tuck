@@ -61,7 +61,9 @@ struct HomeView: View {
                 }
             }
             .sheet(isPresented: $showingAddBookmark) {
-                AddBookmarkView()
+                AddBookmarkView(onBookmarkSaved: {
+                    loadFolders()
+                })
             }
             .refreshable {
                 loadFolders()
@@ -80,7 +82,7 @@ struct HomeView: View {
             do {
                 let fetchedFolders = try await TuckServerAPI.shared.getFolders()
                 await MainActor.run {
-                    folders = fetchedFolders as! [Folder]
+                    folders = fetchedFolders
                     isLoading = false
                 }
             } catch {
