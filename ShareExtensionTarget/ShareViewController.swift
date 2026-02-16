@@ -400,8 +400,9 @@ class ShareViewController: UIViewController {
                 request.httpMethod = "POST"
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                 
-                // Get auth token if available
-                if let token = UserDefaults.standard.string(forKey: "authToken") {
+                // Get auth token from shared UserDefaults (App Group)
+                if let sharedDefaults = UserDefaults(suiteName: "group.com.bookmarkapp.shared"),
+                   let token = sharedDefaults.string(forKey: "authToken") {
                     request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                 }
                 
@@ -414,11 +415,15 @@ class ShareViewController: UIViewController {
                 
                 request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
                 
-                let (_, response) = try await URLSession.shared.data(for: request)
+                let (data, response) = try await URLSession.shared.data(for: request)
                 
-                guard let httpResponse = response as? HTTPURLResponse,
-                      (200...299).contains(httpResponse.statusCode) else {
-                    throw NSError(domain: "APIError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to save bookmark"])
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    throw NSError(domain: "APIError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])
+                }
+                
+                guard (200...299).contains(httpResponse.statusCode) else {
+                    let errorMessage = String(data: data, encoding: .utf8) ?? "Unknown error"
+                    throw NSError(domain: "APIError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Server returned \(httpResponse.statusCode): \(errorMessage)"])
                 }
                 
                 // Save to pending store as well for immediate sync

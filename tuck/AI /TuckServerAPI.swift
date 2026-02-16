@@ -6,8 +6,21 @@ class TuckServerAPI {
     private let baseURL = "https://tuckserverapi-production.up.railway.app"
     
     private var authToken: String? {
-        get { UserDefaults.standard.string(forKey: "authToken") }
-        set { UserDefaults.standard.set(newValue, forKey: "authToken") }
+        get {
+            // Try shared UserDefaults first (for share extension), then standard
+            if let sharedDefaults = UserDefaults(suiteName: "group.com.bookmarkapp.shared"),
+               let token = sharedDefaults.string(forKey: "authToken") {
+                return token
+            }
+            return UserDefaults.standard.string(forKey: "authToken")
+        }
+        set {
+            // Store in both standard and shared UserDefaults
+            UserDefaults.standard.set(newValue, forKey: "authToken")
+            if let sharedDefaults = UserDefaults(suiteName: "group.com.bookmarkapp.shared") {
+                sharedDefaults.set(newValue, forKey: "authToken")
+            }
+        }
     }
     
     var isLoggedIn: Bool {
@@ -16,15 +29,28 @@ class TuckServerAPI {
     
     var currentUser: ServerUser? {
         get {
+            // Try shared UserDefaults first, then standard
+            if let sharedDefaults = UserDefaults(suiteName: "group.com.bookmarkapp.shared"),
+               let data = sharedDefaults.data(forKey: "currentUser"),
+               let user = try? JSONDecoder().decode(ServerUser.self, from: data) {
+                return user
+            }
             guard let data = UserDefaults.standard.data(forKey: "currentUser") else { return nil }
             return try? JSONDecoder().decode(ServerUser.self, from: data)
         }
         set {
             if let user = newValue {
                 let data = try? JSONEncoder().encode(user)
+                // Save to both standard and shared UserDefaults
                 UserDefaults.standard.set(data, forKey: "currentUser")
+                if let sharedDefaults = UserDefaults(suiteName: "group.com.bookmarkapp.shared") {
+                    sharedDefaults.set(data, forKey: "currentUser")
+                }
             } else {
                 UserDefaults.standard.removeObject(forKey: "currentUser")
+                if let sharedDefaults = UserDefaults(suiteName: "group.com.bookmarkapp.shared") {
+                    sharedDefaults.removeObject(forKey: "currentUser")
+                }
             }
         }
     }
@@ -50,6 +76,14 @@ class TuckServerAPI {
     func logout() {
         authToken = nil
         currentUser = nil
+        // Also clear from standard UserDefaults explicitly
+        UserDefaults.standard.removeObject(forKey: "authToken")
+        UserDefaults.standard.removeObject(forKey: "currentUser")
+        // Clear from shared UserDefaults
+        if let sharedDefaults = UserDefaults(suiteName: "group.com.bookmarkapp.shared") {
+            sharedDefaults.removeObject(forKey: "authToken")
+            sharedDefaults.removeObject(forKey: "currentUser")
+        }
     }
     
     // MARK: - Smart Sort & Bookmarks

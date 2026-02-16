@@ -225,11 +225,41 @@ public final class BookmarkViewModel: ObservableObject {
         Task {
             do {
                 let serverFolders = try await TuckServerAPI.shared.getFolders()
-                self.folders = serverFolders
+                
+                // Now fetch bookmarks for each folder
+                var foldersWithBookmarks: [Folder] = []
+                
+                for folder in serverFolders {
+                    do {
+                        let serverBookmarks = try await TuckServerAPI.shared.getBookmarks(folderId: folder.id)
+                        
+                        // Convert ServerBookmark to Bookmark
+                        let bookmarks = serverBookmarks.map { serverBookmark in
+                            Bookmark(
+                                id: serverBookmark.id,
+                                url: serverBookmark.url,
+                                title: serverBookmark.title,
+                                notes: serverBookmark.notes,
+                                folderId: serverBookmark.folderId,
+                                createdAt: serverBookmark.createdAt
+                            )
+                        }
+                        
+                        // Create folder with bookmarks
+                        var folderWithBookmarks = folder
+                        folderWithBookmarks.bookmarks = bookmarks
+                        foldersWithBookmarks.append(folderWithBookmarks)
+                    } catch {
+                        // Add folder without bookmarks if fetch fails
+                        foldersWithBookmarks.append(folder)
+                    }
+                }
+                
+                self.folders = foldersWithBookmarks
                 self.isLoading = false
                 
                 // Update user profile stats
-                self.userProfile.totalSaves = serverFolders.reduce(0) { $0 + $1.bookmarks.count }
+                self.userProfile.totalSaves = foldersWithBookmarks.reduce(0) { $0 + $1.bookmarks.count }
                 
                 // Generate stale bookmarks
                 generateStaleBookmarks()
@@ -381,11 +411,30 @@ public final class BookmarkViewModel: ObservableObject {
         let items = PendingStore.load()
         guard !items.isEmpty else { return }
         
-        for item in items {
-            // Create bookmark from pending item and save via API
-            saveBookmark(url: item.url ?? "", title: item.title, notes: nil)
+        Task {
+            // Process all pending bookmarks
+            for item in items {
+                do {
+                    // Create bookmark from pending item and save via API
+                    if let url = item.url, !url.isEmpty {
+                        _ = try await TuckServerAPI.shared.analyzeAndSaveBookmark(
+                            url: url,
+                            title: item.title,
+                            notes: nil
+                        )
+                    }
+                } catch {
+                    // Silently fail individual bookmark syncs
+                }
+            }
+            
+            // Clear pending store after all syncs complete
+            PendingStore.clear()
+            
+            // Reload folders to show new bookmarks
+            await MainActor.run {
+                loadFolders()
+            }
         }
-        
-        PendingStore.clear()
     }
 }
