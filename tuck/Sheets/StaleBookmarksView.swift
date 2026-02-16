@@ -37,7 +37,7 @@ struct StaleBookmarkRow: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(bookmark.title)
+            Text(bookmark.displayTitle)
                 .font(.headline)
             
             HStack(spacing: 12) {

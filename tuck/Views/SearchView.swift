@@ -7,7 +7,7 @@ struct SearchView: View {
     var filteredBookmarks: [Bookmark] {
         if searchText.isEmpty { return [] }
         return viewModel.folders.flatMap { $0.bookmarks }.filter {
-            $0.title.localizedCaseInsensitiveContains(searchText) ||
+            (($0.title?.localizedCaseInsensitiveContains(searchText)) != nil) ||
             $0.tags.contains(where: { $0.localizedCaseInsensitiveContains(searchText) })
         }
     }

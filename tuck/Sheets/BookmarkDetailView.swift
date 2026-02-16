@@ -14,7 +14,7 @@ struct BookmarkDetailView: View {
         self.bookmark = bookmark
         self.viewModel = viewModel
         self.folder = folder
-        _notes = State(initialValue: bookmark.notes)
+        _notes = State(initialValue: bookmark.notes ?? "")
     }
     
     var body: some View {
@@ -62,7 +62,7 @@ struct BookmarkDetailView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                         
-                        Text(bookmark.title)
+                        Text(bookmark.displayTitle)
                             .font(.title2)
                             .fontWeight(.bold)
                     }
@@ -94,7 +94,7 @@ struct BookmarkDetailView: View {
                         
                         if folder != nil {
                             Button(action: { toggleComplete() }) {
-                                Label(bookmark.isCompleted ? "Done" : "Mark Done", 
+                                Label(bookmark.isCompleted ? "Done" : "Mark Done",
                                       systemImage: "checkmark.circle")
                                     .frame(maxWidth: .infinity)
                             }
@@ -142,8 +142,8 @@ struct BookmarkDetailView: View {
     // MARK: - Helpers
 
     private var bookmarkURL: URL? {
-        guard let s = bookmark.url?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !s.isEmpty else { return nil }
+        let s = bookmark.url.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !s.isEmpty else { return nil }
         return URL(string: s)
     }
 

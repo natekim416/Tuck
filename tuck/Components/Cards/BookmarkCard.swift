@@ -52,7 +52,7 @@ struct BookmarkCard: View {
                 }
                 .foregroundColor(.secondary)
                 
-                Text(bookmark.title)
+                Text(bookmark.displayTitle)
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .lineLimit(2)
