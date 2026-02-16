@@ -11,6 +11,15 @@ struct BookmarkApp: App {
                     .onAppear {
                         // Re-check authentication when app appears
                         isAuthenticated = TuckServerAPI.shared.isLoggedIn
+                        
+                        // Listen for logout notifications
+                        NotificationCenter.default.addObserver(
+                            forName: NSNotification.Name("UserDidLogout"),
+                            object: nil,
+                            queue: .main
+                        ) { _ in
+                            isAuthenticated = false
+                        }
                     }
             } else {
                 AuthView(isAuthenticated: $isAuthenticated)

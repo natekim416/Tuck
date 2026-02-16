@@ -59,9 +59,22 @@ class ShareViewController: UIViewController {
         return button
     }()
     
+    private lazy var aiSortButton: UIButton = {
+        var config = UIButton.Configuration.filled()
+        config.title = "AI Auto-Sort & Save"
+        config.image = UIImage(systemName: "sparkles")
+        config.imagePadding = 8
+        config.baseBackgroundColor = .systemPurple
+        config.cornerStyle = .medium
+        let button = UIButton(configuration: config)
+        button.addTarget(self, action: #selector(aiAutoSortAndSave), for: .touchUpInside)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+    
     private lazy var saveButton: UIButton = {
         var config = UIButton.Configuration.filled()
-        config.title = "Save Bookmark"
+        config.title = "Save to Selected Folder"
         config.baseBackgroundColor = .systemBlue
         config.cornerStyle = .medium
         let button = UIButton(configuration: config)
@@ -91,6 +104,7 @@ class ShareViewController: UIViewController {
         containerView.addSubview(titleLabel)
         containerView.addSubview(previewImageView)
         containerView.addSubview(urlLabel)
+        containerView.addSubview(aiSortButton)
         containerView.addSubview(folderButton)
         containerView.addSubview(saveButton)
         containerView.addSubview(cancelButton)
@@ -113,12 +127,17 @@ class ShareViewController: UIViewController {
             urlLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
             urlLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
             
-            folderButton.topAnchor.constraint(equalTo: urlLabel.bottomAnchor, constant: 20),
+            aiSortButton.topAnchor.constraint(equalTo: urlLabel.bottomAnchor, constant: 20),
+            aiSortButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
+            aiSortButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
+            aiSortButton.heightAnchor.constraint(equalToConstant: 50),
+            
+            folderButton.topAnchor.constraint(equalTo: aiSortButton.bottomAnchor, constant: 12),
             folderButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
             folderButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
             folderButton.heightAnchor.constraint(equalToConstant: 50),
             
-            saveButton.topAnchor.constraint(equalTo: folderButton.bottomAnchor, constant: 16),
+            saveButton.topAnchor.constraint(equalTo: folderButton.bottomAnchor, constant: 12),
             saveButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
             saveButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
             saveButton.heightAnchor.constraint(equalToConstant: 50),
@@ -242,12 +261,12 @@ class ShareViewController: UIViewController {
         
         return renderer.image { context in
             let colors = [UIColor.systemBlue.cgColor, UIColor.systemPurple.cgColor]
-            let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), 
-                                     colors: colors as CFArray, 
+            let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                                     colors: colors as CFArray,
                                      locations: [0, 1])!
-            context.cgContext.drawLinearGradient(gradient, 
-                                                start: .zero, 
-                                                end: CGPoint(x: size.width, y: size.height), 
+            context.cgContext.drawLinearGradient(gradient,
+                                                start: .zero,
+                                                end: CGPoint(x: size.width, y: size.height),
                                                 options: [])
             
             let domain = url.host ?? "Link"
@@ -277,7 +296,7 @@ class ShareViewController: UIViewController {
         } else if host.contains("amazon") || host.contains("ebay") || urlString.contains("shop") {
             suggestedFolderName = "Buy Later"
             icon = "cart.fill"
-        } else if host.contains("github") || host.contains("stackoverflow") || 
+        } else if host.contains("github") || host.contains("stackoverflow") ||
                   urlString.contains("tutorial") || urlString.contains("guide") {
             suggestedFolderName = "Learn to Code"
             icon = "chevron.left.forwardslash.chevron.right"
@@ -353,6 +372,79 @@ class ShareViewController: UIViewController {
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         
         present(alert, animated: true)
+    }
+    
+    @objc private func aiAutoSortAndSave() {
+        guard let url = sharedURL, !url.isEmpty else {
+            showError("Please share a valid URL for AI sorting")
+            return
+        }
+        
+        // Show loading state
+        var config = aiSortButton.configuration
+        config?.showsActivityIndicator = true
+        config?.title = "AI Analyzing..."
+        aiSortButton.configuration = config
+        aiSortButton.isEnabled = false
+        
+        // Call the API to analyze and save
+        Task {
+            do {
+                // Use TuckServerAPI to analyze and save bookmark with AI
+                let baseURL = "https://tuckserverapi-production.up.railway.app"
+                guard let apiURL = URL(string: "\(baseURL)/bookmarks/smart-save") else {
+                    throw NSError(domain: "InvalidURL", code: 0)
+                }
+                
+                var request = URLRequest(url: apiURL)
+                request.httpMethod = "POST"
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                
+                // Get auth token if available
+                if let token = UserDefaults.standard.string(forKey: "authToken") {
+                    request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                }
+                
+                let title = extractTitle(from: url)
+                let requestBody: [String: Any] = [
+                    "url": url,
+                    "title": title,
+                    "notes": nil as Any?
+                ]
+                
+                request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+                
+                let (_, response) = try await URLSession.shared.data(for: request)
+                
+                guard let httpResponse = response as? HTTPURLResponse,
+                      (200...299).contains(httpResponse.statusCode) else {
+                    throw NSError(domain: "APIError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to save bookmark"])
+                }
+                
+                // Save to pending store as well for immediate sync
+                let payload = PendingBookmarkPayload(
+                    kind: .url,
+                    title: title,
+                    folder: "AI Sorted",
+                    typeRaw: determineBookmarkType(from: url).capitalized,
+                    url: url
+                )
+                PendingStore.append(payload)
+                
+                DispatchQueue.main.async { [weak self] in
+                    self?.showSuccess()
+                }
+            } catch {
+                DispatchQueue.main.async { [weak self] in
+                    var config = self?.aiSortButton.configuration
+                    config?.showsActivityIndicator = false
+                    config?.title = "AI Auto-Sort & Save"
+                    self?.aiSortButton.configuration = config
+                    self?.aiSortButton.isEnabled = true
+                    self?.showError("AI sorting failed: \(error.localizedDescription)")
+                }
+            }
+        }
     }
     
     @objc private func saveBookmark() {

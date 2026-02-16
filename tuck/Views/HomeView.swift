@@ -69,6 +69,8 @@ struct HomeView: View {
                 loadFolders()
             }
             .onAppear {
+                // Sync any pending bookmarks from share extension
+                viewModel.syncPendingBookmarks()
                 loadFolders()
             }
         }

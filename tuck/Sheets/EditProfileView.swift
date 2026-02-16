@@ -2,19 +2,17 @@ import SwiftUI
 
 struct EditProfileView: View {
     @Environment(\.presentationMode) var presentationMode
-    var profile: UserProfile
-    var onSave: (UserProfile) -> Void
+    @Binding var userProfile: UserProfile
     
     @State private var displayName: String
     @State private var bio: String
     @State private var interests: String
     
-    init(profile: UserProfile, onSave: @escaping (UserProfile) -> Void) {
-        self.profile = profile
-        self.onSave = onSave
-        _displayName = State(initialValue: profile.displayName)
-        _bio = State(initialValue: profile.bio)
-        _interests = State(initialValue: profile.interests.joined(separator: ", "))
+    init(userProfile: Binding<UserProfile>) {
+        self._userProfile = userProfile
+        _displayName = State(initialValue: userProfile.wrappedValue.displayName)
+        _bio = State(initialValue: userProfile.wrappedValue.bio)
+        _interests = State(initialValue: userProfile.wrappedValue.interests.joined(separator: ", "))
     }
     
     var body: some View {
@@ -29,8 +27,8 @@ struct EditProfileView: View {
                                                endPoint: .bottomTrailing))
                             .frame(width: 100, height: 100)
                             .overlay(
-                                Text(String(displayName.prefix(1)))
-                                    .font(.system(size: 40, weight: .bold))
+                                Text((displayName.isEmpty ? userProfile.username : displayName).prefix(2).uppercased())
+                                    .font(.system(size: 36, weight: .bold))
                                     .foregroundColor(.white)
                             )
                         Spacer()
@@ -38,6 +36,7 @@ struct EditProfileView: View {
                     .padding(.vertical)
                     
                     TextField("Display Name", text: $displayName)
+                        .textContentType(.name)
                 }
                 
                 Section("About") {
@@ -45,6 +44,12 @@ struct EditProfileView: View {
                         .lineLimit(3...6)
                     
                     TextField("Interests (comma separated)", text: $interests)
+                }
+                
+                Section {
+                    Button("Change Profile Picture") {
+                        // TODO: Implement photo picker
+                    }
                 }
             }
             .navigationTitle("Edit Profile")
@@ -59,19 +64,19 @@ struct EditProfileView: View {
                     Button("Save") {
                         saveProfile()
                     }
+                    .fontWeight(.semibold)
                 }
             }
         }
     }
     
     private func saveProfile() {
-        var updatedProfile = profile
-        updatedProfile.displayName = displayName
-        updatedProfile.bio = bio
-        updatedProfile.interests = interests.split(separator: ",")
+        userProfile.displayName = displayName
+        userProfile.bio = bio
+        userProfile.interests = interests.split(separator: ",")
             .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
         
-        onSave(updatedProfile)
         presentationMode.wrappedValue.dismiss()
     }
 }

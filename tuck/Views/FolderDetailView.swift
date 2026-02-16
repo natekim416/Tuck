@@ -42,10 +42,8 @@ struct FolderDetailView: View {
                 if localFolder.bookmarks.isEmpty {
                     EmptyFolderView(onAddBookmark: { showingAddBookmark = true })
                 } else {
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 15) {
-                        ForEach(localFolder.bookmarks) { bookmark in
-                            BookmarkCard(bookmark: bookmark, viewModel: viewModel, folder: localFolder)
-                        }
+                    WaterfallGrid(columns: 2, spacing: 15, items: localFolder.bookmarks) { bookmark in
+                        BookmarkCard(bookmark: bookmark, viewModel: viewModel, folder: localFolder)
                     }
                     .padding(.horizontal)
                     
@@ -64,7 +62,7 @@ struct FolderDetailView: View {
                         Label("Add Bookmark", systemImage: "plus")
                     }
                     Button(action: { togglePublic() }) {
-                        Label(localFolder.isPublic ? "Make Private" : "Make Public", 
+                        Label(localFolder.isPublic ? "Make Private" : "Make Public",
                               systemImage: localFolder.isPublic ? "lock" : "globe")
                     }
                     Button(action: {}) {
@@ -183,5 +181,40 @@ struct MoreIdeasSection: View {
             }
         }
         .padding(.top, 20)
+    }
+}
+
+// MARK: - Waterfall/Pinterest-style Grid Layout
+
+struct WaterfallGrid<Item: Identifiable, Content: View>: View {
+    let columns: Int
+    let spacing: CGFloat
+    let items: [Item]
+    let content: (Item) -> Content
+    
+    init(columns: Int = 2, spacing: CGFloat = 10, items: [Item], @ViewBuilder content: @escaping (Item) -> Content) {
+        self.columns = columns
+        self.spacing = spacing
+        self.items = items
+        self.content = content
+    }
+    
+    var body: some View {
+        GeometryReader { geometry in
+            let columnWidth = (geometry.size.width - CGFloat(columns - 1) * spacing) / CGFloat(columns)
+            
+            HStack(alignment: .top, spacing: spacing) {
+                ForEach(0..<columns, id: \.self) { columnIndex in
+                    LazyVStack(spacing: spacing) {
+                        ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                            if index % columns == columnIndex {
+                                content(item)
+                                    .frame(width: columnWidth)
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

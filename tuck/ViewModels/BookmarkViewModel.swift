@@ -256,7 +256,17 @@ public final class BookmarkViewModel: ObservableObject {
         Task {
             do {
                 let serverBookmarks = try await TuckServerAPI.shared.getBookmarks(folderId: folderId)
-                self.bookmarks = serverBookmarks as! [Bookmark]
+                // Convert ServerBookmark to Bookmark
+                self.bookmarks = serverBookmarks.map { serverBookmark in
+                    Bookmark(
+                        id: serverBookmark.id,
+                        url: serverBookmark.url,
+                        title: serverBookmark.title,
+                        notes: serverBookmark.notes,
+                        folderId: serverBookmark.folderId,
+                        createdAt: serverBookmark.createdAt
+                    )
+                }
                 self.isLoading = false
             } catch {
                 self.errorMessage = error.localizedDescription
