@@ -7,9 +7,9 @@ struct SearchFolderRow: View {
         HStack(spacing: 12) {
             Image(systemName: folder.icon)
                 .font(.title2)
-                .foregroundColor(Color(folder.color))
+                .foregroundColor(Color.fromFolderName(folder.color))
                 .frame(width: 50, height: 50)
-                .background(Color(folder.color).opacity(0.1))
+                .background(Color.fromFolderName(folder.color).opacity(0.1))
                 .cornerRadius(10)
             
             VStack(alignment: .leading, spacing: 4) {

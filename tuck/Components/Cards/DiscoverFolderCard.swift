@@ -15,7 +15,7 @@ struct DiscoverFolderCard: View {
                             .aspectRatio(contentMode: .fill)
                     } placeholder: {
                         Rectangle()
-                            .fill(Color(folder.color).opacity(0.3))
+                            .fill(Color.fromFolderName(folder.color).opacity(0.3))
                     }
                     .frame(width: 200, height: 150)
                     .clipped()

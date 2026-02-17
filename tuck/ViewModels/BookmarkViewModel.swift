@@ -1,205 +1,3 @@
-//import SwiftUI
-//import Combine
-//
-//public class BookmarkViewModel: ObservableObject {
-//    @Published var folders: [Folder] = []
-//    @Published var selectedFolder: Folder?
-//    @Published var userProfile: UserProfile
-//    @Published var discoverFolders: [Folder] = []
-//    @Published var staleBookmarks: [Bookmark] = []
-//
-//    init() {
-//        self.userProfile = UserProfile(username: "You")
-//        loadSampleData()
-//        generateStaleBookmarks()
-//    }
-//
-//    func loadSampleData() {
-//        let codingBookmarks = [
-//            Bookmark(
-//                title: "SwiftUI Complete Guide",
-//                url: "https://example.com/swiftui",
-//                imageURL: "https://picsum.photos/400/300?1",
-//                type: .article,
-//                estimatedReadTime: 15,
-//                estimatedSkimTime: 5,
-//                aiSummary: "Comprehensive guide covering SwiftUI basics to advanced topics.",
-//                tags: ["swift", "ios", "tutorial"],
-//                savedByCount: 1243,
-//                keyQuote: "SwiftUI makes building great UIs simple and intuitive",
-//                opposingViews: [
-//                    OpposingView(title: "Why UIKit Still Matters", url: "https://example.com/uikit", summary: "UIKit provides more control")
-//                ]
-//            ),
-//            Bookmark(
-//                title: "iOS Design Patterns",
-//                url: "https://example.com/patterns",
-//                imageURL: "https://picsum.photos/400/300?2",
-//                type: .video,
-//                estimatedReadTime: 25,
-//                estimatedSkimTime: 8,
-//                aiSummary: "Learn MVVM, Coordinator, and other essential iOS patterns.",
-//                tags: ["design", "architecture"],
-//                savedByCount: 892
-//            )
-//        ]
-//
-//        folders = [
-//            Folder(
-//                name: "Learn to Code",
-//                description: "iOS development resources",
-//                bookmarks: codingBookmarks,
-//                isPublic: true,
-//                color: "blue",
-//                icon: "chevron.left.forwardslash.chevron.right",
-//                savedByCount: 234,
-//                isPopular: true,
-//                outcome: .learn
-//            ),
-//            Folder(
-//                name: "Buy Later",
-//                description: "Products to purchase",
-//                bookmarks: [],
-//                color: "green",
-//                icon: "cart",
-//                outcome: .buy
-//            )
-//        ]
-//
-//        discoverFolders = [
-//            Folder(
-//                name: "UI/UX Inspiration",
-//                description: "Beautiful app designs",
-//                bookmarks: [
-//                    Bookmark(
-//                        title: "Minimalist App Design",
-//                        url: "https://example.com/design1",
-//                        imageURL: "https://picsum.photos/400/300?6",
-//                        type: .article,
-//                        savedByCount: 4523
-//                    )
-//                ],
-//                isPublic: true,
-//                color: "pink",
-//                icon: "paintbrush",
-//                createdBy: "@designpro",
-//                savedByCount: 1847,
-//                isPopular: true
-//            )
-//        ]
-//
-//        userProfile.totalSaves = folders.reduce(0) { $0 + $1.bookmarks.count }
-//    }
-//
-//    func generateStaleBookmarks() {
-//        let calendar = Calendar.current
-//        let twoWeeksAgo = calendar.date(byAdding: .day, value: -14, to: Date())!
-//
-//        staleBookmarks = folders.flatMap { $0.bookmarks }
-//            .filter { bookmark in
-//                if let lastViewed = bookmark.lastViewed {
-//                    return lastViewed < twoWeeksAgo
-//                }
-//                return bookmark.savedDate < twoWeeksAgo
-//            }
-//            .prefix(5)
-//            .map { $0 }
-//    }
-//
-//    func addBookmark(_ bookmark: Bookmark, to folder: Folder) {
-//        if let index = folders.firstIndex(where: { $0.id == folder.id }) {
-//            folders[index].bookmarks.append(bookmark)
-//            userProfile.totalSaves += 1
-//        }
-//    }
-//
-//    func deleteBookmark(_ bookmark: Bookmark, from folder: Folder) {
-//        if let folderIndex = folders.firstIndex(where: { $0.id == folder.id }),
-//           let bookmarkIndex = folders[folderIndex].bookmarks.firstIndex(where: { $0.id == bookmark.id }) {
-//            folders[folderIndex].bookmarks.remove(at: bookmarkIndex)
-//            userProfile.totalSaves -= 1
-//        }
-//    }
-//
-//    func toggleBookmarkComplete(_ bookmark: Bookmark, in folder: Folder) {
-//        if let folderIndex = folders.firstIndex(where: { $0.id == folder.id }),
-//           let bookmarkIndex = folders[folderIndex].bookmarks.firstIndex(where: { $0.id == bookmark.id }) {
-//            folders[folderIndex].bookmarks[bookmarkIndex].isCompleted.toggle()
-//        }
-//    }
-//
-//    func createFolder(_ folder: Folder) {
-//        folders.append(folder)
-//
-//        // Also save to server
-//        Task {
-//            do {
-//                _ = try await TuckServerAPI.shared.createFolder(name: folder.name, color: folder.color)
-//            } catch {
-//                print("Failed to save folder to server: \(error)")
-//            }
-//        }
-//    }
-//
-//    func copyFolder(_ folder: Folder) {
-//        var newFolder = folder
-//        newFolder.id = UUID()
-//        newFolder.createdBy = "You (copied from \(folder.createdBy))"
-//        folders.append(newFolder)
-//    }
-//
-//    func updateFolder(_ folder: Folder) {
-//        if let index = folders.firstIndex(where: { $0.id == folder.id }) {
-//            folders[index] = folder
-//        }
-//    }
-//
-//    func deleteFolder(_ folder: Folder) {
-//        folders.removeAll { $0.id == folder.id }
-//    }
-//
-//    func snoozeBookmark(_ bookmark: Bookmark, days: Int) {
-//        print("Snoozed \(bookmark.title) for \(days) days")
-//    }
-//
-//    func syncPendingBookmarks() {
-//        let items = PendingStore.load()
-//        guard !items.isEmpty else { return }
-//
-//        for item in items {
-//            let type = BookmarkType(rawValue: item.typeRaw) ?? .other
-//
-//            var assets: [BookmarkAsset] = []
-//            if let rel = item.assetRelativePath, let uti = item.assetUTI {
-//                assets = [BookmarkAsset(relativePath: rel, thumbnailRelativePath: nil, uti: uti, originalFilename: item.assetFilename)]
-//            }
-//
-//            let bookmark = Bookmark(
-//                title: item.title,
-//                url: item.url,                 // optional
-//                imageURL: nil,
-//                type: type,
-//                assets: assets,
-////                estimatedReadTime: estimateReadTime(for: type),
-////                estimatedSkimTime: estimateSkimTime(for: type),
-//                aiSummary: "Added from share sheet"
-//            )
-//
-//            if let existingFolder = folders.first(where: { $0.name == item.folder }) {
-//                addBookmark(bookmark, to: existingFolder)
-//            } else {
-//                let newFolder = Folder(name: item.folder, color: "blue", icon: "folder")
-//                createFolder(newFolder)
-//                if let created = folders.first(where: { $0.name == item.folder }) {
-//                    addBookmark(bookmark, to: created)
-//                }
-//            }
-//        }
-//
-//        PendingStore.clear()
-//    }
-//}
-//
 import SwiftUI
 import Combine
 
@@ -226,42 +24,42 @@ public final class BookmarkViewModel: ObservableObject {
             do {
                 let serverFolders = try await TuckServerAPI.shared.getFolders()
                 
-                // Now fetch bookmarks for each folder
-                var foldersWithBookmarks: [Folder] = []
-                
-                for folder in serverFolders {
-                    do {
-                        let serverBookmarks = try await TuckServerAPI.shared.getBookmarks(folderId: folder.id)
-                        
-                        // Convert ServerBookmark to Bookmark
-                        let bookmarks = serverBookmarks.map { serverBookmark in
-                            Bookmark(
-                                id: serverBookmark.id,
-                                url: serverBookmark.url,
-                                title: serverBookmark.title,
-                                notes: serverBookmark.notes,
-                                folderId: serverBookmark.folderId,
-                                createdAt: serverBookmark.createdAt
-                            )
+                // Fetch bookmarks for ALL folders concurrently using TaskGroup
+                let foldersWithBookmarks = try await withThrowingTaskGroup(of: Folder.self) { group in
+                    for folder in serverFolders {
+                        group.addTask {
+                            var folderCopy = folder
+                            do {
+                                let serverBookmarks = try await TuckServerAPI.shared.getBookmarks(folderId: folder.id)
+                                folderCopy.bookmarks = serverBookmarks.map { sb in
+                                    Bookmark(
+                                        id: sb.id,
+                                        url: sb.url,
+                                        title: sb.title,
+                                        notes: sb.notes,
+                                        folderId: sb.folderId,
+                                        createdAt: sb.createdAt
+                                    )
+                                }
+                            } catch {
+                                // Folder keeps empty bookmarks array on failure
+                            }
+                            return folderCopy
                         }
-                        
-                        // Create folder with bookmarks
-                        var folderWithBookmarks = folder
-                        folderWithBookmarks.bookmarks = bookmarks
-                        foldersWithBookmarks.append(folderWithBookmarks)
-                    } catch {
-                        // Add folder without bookmarks if fetch fails
-                        foldersWithBookmarks.append(folder)
                     }
+                    
+                    var results: [Folder] = []
+                    for try await folder in group {
+                        results.append(folder)
+                    }
+                    return results
                 }
                 
-                self.folders = foldersWithBookmarks
+                // Sort to maintain consistent order
+                self.folders = foldersWithBookmarks.sorted { $0.name < $1.name }
                 self.isLoading = false
                 
-                // Update user profile stats
-                self.userProfile.totalSaves = foldersWithBookmarks.reduce(0) { $0 + $1.bookmarks.count }
-                
-                // Generate stale bookmarks
+                self.userProfile.totalSaves = self.folders.reduce(0) { $0 + $1.bookmarks.count }
                 generateStaleBookmarks()
             } catch {
                 self.errorMessage = error.localizedDescription
@@ -286,7 +84,6 @@ public final class BookmarkViewModel: ObservableObject {
         Task {
             do {
                 let serverBookmarks = try await TuckServerAPI.shared.getBookmarks(folderId: folderId)
-                // Convert ServerBookmark to Bookmark
                 self.bookmarks = serverBookmarks.map { serverBookmark in
                     Bookmark(
                         id: serverBookmark.id,
@@ -320,7 +117,7 @@ public final class BookmarkViewModel: ObservableObject {
             .map { $0 }
     }
 
-    // MARK: - Mutations
+    // MARK: - Folder Mutations
 
     func createFolder(name: String, color: String?) {
         Task {
@@ -334,21 +131,47 @@ public final class BookmarkViewModel: ObservableObject {
     }
     
     func createFolder(_ folder: Folder) {
-        // Use the existing method with name and color from the folder
         createFolder(name: folder.name, color: folder.color)
     }
     
     func updateFolder(_ folder: Folder) {
+        // Optimistic local update
         if let index = folders.firstIndex(where: { $0.id == folder.id }) {
             folders[index] = folder
         }
-        // TODO: Add server sync when endpoint exists
+        
+        // Sync to server
+        Task {
+            do {
+                _ = try await TuckServerAPI.shared.updateFolder(
+                    id: folder.id,
+                    name: folder.name,
+                    color: folder.color,
+                    isPublic: folder.isPublic
+                )
+            } catch {
+                self.errorMessage = error.localizedDescription
+                loadFolders() // Revert on failure
+            }
+        }
     }
     
     func deleteFolder(_ folder: Folder) {
+        // Optimistic local removal
         folders.removeAll { $0.id == folder.id }
-        // TODO: Add server deletion when endpoint exists
+        
+        // Delete on server
+        Task {
+            do {
+                try await TuckServerAPI.shared.deleteFolder(id: folder.id)
+            } catch {
+                self.errorMessage = error.localizedDescription
+                loadFolders() // Revert on failure
+            }
+        }
     }
+    
+    // MARK: - Bookmark Mutations
     
     func addBookmark(_ bookmark: Bookmark, to folder: Folder) {
         if let index = folders.firstIndex(where: { $0.id == folder.id }) {
@@ -358,10 +181,21 @@ public final class BookmarkViewModel: ObservableObject {
     }
     
     func deleteBookmark(_ bookmark: Bookmark, from folder: Folder) {
+        // Optimistic local removal
         if let folderIndex = folders.firstIndex(where: { $0.id == folder.id }),
            let bookmarkIndex = folders[folderIndex].bookmarks.firstIndex(where: { $0.id == bookmark.id }) {
             folders[folderIndex].bookmarks.remove(at: bookmarkIndex)
             userProfile.totalSaves -= 1
+        }
+        
+        // Delete on server
+        Task {
+            do {
+                try await TuckServerAPI.shared.deleteBookmark(id: bookmark.id)
+            } catch {
+                self.errorMessage = error.localizedDescription
+                loadFolders()
+            }
         }
     }
 
@@ -370,7 +204,7 @@ public final class BookmarkViewModel: ObservableObject {
             do {
                 try await TuckServerAPI.shared.deleteBookmark(id: id)
                 loadBookmarks(folderId: selectedFolder?.id)
-                loadFolders() // Refresh to update counts
+                loadFolders()
             } catch {
                 self.errorMessage = error.localizedDescription
             }
@@ -400,7 +234,7 @@ public final class BookmarkViewModel: ObservableObject {
             do {
                 let saved = try await TuckServerAPI.shared.analyzeAndSaveBookmark(url: url, title: title, notes: notes)
                 loadBookmarks(folderId: saved.folder?.id ?? selectedFolder?.id)
-                loadFolders() // Refresh folders to update counts
+                loadFolders()
             } catch {
                 self.errorMessage = error.localizedDescription
             }
@@ -412,26 +246,27 @@ public final class BookmarkViewModel: ObservableObject {
         guard !items.isEmpty else { return }
         
         Task {
-            // Process all pending bookmarks
-            for item in items {
-                do {
-                    // Create bookmark from pending item and save via API
-                    if let url = item.url, !url.isEmpty {
-                        _ = try await TuckServerAPI.shared.analyzeAndSaveBookmark(
-                            url: url,
-                            title: item.title,
-                            notes: nil
-                        )
+            // Process all pending bookmarks concurrently
+            await withTaskGroup(of: Void.self) { group in
+                for item in items {
+                    group.addTask {
+                        do {
+                            if let url = item.url, !url.isEmpty {
+                                _ = try await TuckServerAPI.shared.analyzeAndSaveBookmark(
+                                    url: url,
+                                    title: item.title,
+                                    notes: nil
+                                )
+                            }
+                        } catch {
+                            // Silently fail individual bookmark syncs
+                        }
                     }
-                } catch {
-                    // Silently fail individual bookmark syncs
                 }
             }
             
-            // Clear pending store after all syncs complete
             PendingStore.clear()
             
-            // Reload folders to show new bookmarks
             await MainActor.run {
                 loadFolders()
             }

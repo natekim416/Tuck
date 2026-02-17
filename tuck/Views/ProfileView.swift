@@ -216,27 +216,28 @@ struct SettingsRow: View {
     let icon: String
     let title: String
     let color: Color
-    
+    var action: (() -> Void)? = nil
+
     var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .foregroundColor(color)
-                .frame(width: 28)
-            
-            Text(title)
-                .font(.body)
-            
-            Spacer()
-            
-            Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 16)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            // Handle settings row tap
+        Button(action: { action?() }) {
+            HStack {
+                Image(systemName: icon)
+                    .foregroundColor(color)
+                    .frame(width: 28)
+
+                Text(title)
+                    .font(.body)
+                    .foregroundColor(.primary)
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 16)
+            .contentShape(Rectangle())
         }
     }
 }

@@ -117,6 +117,15 @@ class TuckServerAPI {
         return try await post("/folders", body: request, requiresAuth: true)
     }
     
+    func deleteFolder(id: UUID) async throws {
+        try await delete("/folders/\(id.uuidString)", requiresAuth: true)
+    }
+    
+    func updateFolder(id: UUID, name: String?, color: String?, isPublic: Bool?) async throws -> ServerFolder {
+        let request = UpdateFolderRequest(name: name, color: color, isPublic: isPublic)
+        return try await patch("/folders/\(id.uuidString)", body: request, requiresAuth: true)
+    }
+    
     // MARK: - Bookmarks
     
     func getBookmarks(folderId: UUID? = nil) async throws -> [ServerBookmark] {
@@ -236,6 +245,44 @@ class TuckServerAPI {
             throw APIError.statusCode(httpResponse.statusCode)
         }
     }
+    
+    private func patch<T: Encodable, R: Decodable>(
+        _ path: String,
+        body: T,
+        requiresAuth: Bool = false
+    ) async throws -> R {
+        guard let url = URL(string: baseURL + path) else {
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if requiresAuth {
+            guard let token = authToken else {
+                throw APIError.notAuthenticated
+            }
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        request.httpBody = try JSONEncoder().encode(body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        guard (200...299).contains(httpResponse.statusCode) else {
+            if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
+                throw APIError.serverError(errorResponse.reason)
+            }
+            throw APIError.statusCode(httpResponse.statusCode)
+        }
+        
+        return try JSONDecoder().decode(R.self, from: data)
+    }
 }
 
 // MARK: - Request Models
@@ -264,6 +311,12 @@ struct AnalyzeAndSaveRequest: Codable {
 struct CreateFolderRequest: Codable {
     let name: String
     let color: String?
+}
+
+struct UpdateFolderRequest: Codable {
+    let name: String?
+    let color: String?
+    let isPublic: Bool?
 }
 
 // MARK: - Response Models (prefixed with "Server" to avoid conflicts)

@@ -4,20 +4,22 @@ struct FolderDetailView: View {
     let folder: Folder
     @ObservedObject var viewModel: BookmarkViewModel
     @State private var showingAddBookmark = false
+    @State private var showingDeleteAlert = false
     @State private var localFolder: Folder
-    
+    @Environment(\.dismiss) private var dismiss
+
     init(folder: Folder, viewModel: BookmarkViewModel) {
         self.folder = folder
         self.viewModel = viewModel
         _localFolder = State(initialValue: folder)
     }
-    
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 FolderHeaderView(folder: localFolder)
                     .padding(.horizontal)
-                
+
                 if !localFolder.bookmarks.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
@@ -29,16 +31,16 @@ struct FolderDetailView: View {
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
-                        
+
                         ProgressView(value: localFolder.progressPercentage, total: 100)
-                            .tint(Color(localFolder.color))
+                            .tint(Color.fromFolderName(localFolder.color))
                     }
                     .padding()
                     .background(Color.gray.opacity(0.1))
                     .cornerRadius(12)
                     .padding(.horizontal)
                 }
-                
+
                 if localFolder.bookmarks.isEmpty {
                     EmptyFolderView(onAddBookmark: { showingAddBookmark = true })
                 } else {
@@ -46,7 +48,7 @@ struct FolderDetailView: View {
                         BookmarkCard(bookmark: bookmark, viewModel: viewModel, folder: localFolder)
                     }
                     .padding(.horizontal)
-                    
+
                     if !viewModel.discoverFolders.isEmpty {
                         MoreIdeasSection(viewModel: viewModel)
                     }
@@ -65,11 +67,11 @@ struct FolderDetailView: View {
                         Label(localFolder.isPublic ? "Make Private" : "Make Public",
                               systemImage: localFolder.isPublic ? "lock" : "globe")
                     }
-                    Button(action: {}) {
+                    Button(action: { shareFolder() }) {
                         Label("Share Folder", systemImage: "square.and.arrow.up")
                     }
                     Divider()
-                    Button(role: .destructive, action: { deleteFolder() }) {
+                    Button(role: .destructive, action: { showingDeleteAlert = true }) {
                         Label("Delete Folder", systemImage: "trash")
                     }
                 } label: {
@@ -77,47 +79,84 @@ struct FolderDetailView: View {
                 }
             }
         }
+        .alert("Delete Folder", isPresented: $showingDeleteAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                viewModel.deleteFolder(localFolder)
+                dismiss()
+            }
+        } message: {
+            Text("Are you sure you want to delete \"\(localFolder.name)\"? This will also remove all bookmarks in this folder. This cannot be undone.")
+        }
         .sheet(isPresented: $showingAddBookmark) {
-//            AddBookmarkView(viewModel: viewModel, selectedFolder: localFolder)
-              AddBookmarkView()
+            AddBookmarkView(onBookmarkSaved: {
+                viewModel.loadFolders()
+                // Refresh local folder data
+                if let updated = viewModel.folders.first(where: { $0.id == folder.id }) {
+                    localFolder = updated
+                }
+            })
         }
         .onAppear {
             if let updated = viewModel.folders.first(where: { $0.id == folder.id }) {
                 localFolder = updated
             }
         }
+        // Keep local folder in sync with viewModel changes
+        .onChange(of: viewModel.folders) { newFolders in
+            if let updated = newFolders.first(where: { $0.id == folder.id }) {
+                localFolder = updated
+            }
+        }
     }
-    
+
     private func togglePublic() {
         localFolder.isPublic.toggle()
         viewModel.updateFolder(localFolder)
     }
-    
-    private func deleteFolder() {
-        viewModel.deleteFolder(localFolder)
+
+    private func shareFolder() {
+        // Build a shareable text description
+        let text = "\(localFolder.name) — \(localFolder.bookmarks.count) bookmarks on Tuck"
+        let activityVC = UIActivityViewController(
+            activityItems: [text],
+            applicationActivities: nil
+        )
+
+        // Present the share sheet
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootVC = windowScene.windows.first?.rootViewController {
+            // Find the topmost presented controller
+            var topVC = rootVC
+            while let presented = topVC.presentedViewController {
+                topVC = presented
+            }
+            activityVC.popoverPresentationController?.sourceView = topVC.view
+            topVC.present(activityVC, animated: true)
+        }
     }
 }
 
 struct FolderHeaderView: View {
     let folder: Folder
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: folder.icon)
                     .font(.title)
-                    .foregroundColor(Color(folder.color))
+                    .foregroundColor(Color.fromFolderName(folder.color))
                 Text(folder.name)
                     .font(.title)
                     .fontWeight(.bold)
             }
-            
+
             if !folder.description.isEmpty {
                 Text(folder.description)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
-            
+
             HStack {
                 Label("\(folder.bookmarks.count) items", systemImage: "bookmark")
                 Spacer()
@@ -131,14 +170,14 @@ struct FolderHeaderView: View {
             .foregroundColor(.secondary)
         }
         .padding()
-        .background(Color(folder.color).opacity(0.1))
+        .background(Color.fromFolderName(folder.color).opacity(0.1))
         .cornerRadius(12)
     }
 }
 
 struct EmptyFolderView: View {
     let onAddBookmark: () -> Void
-    
+
     var body: some View {
         VStack(spacing: 20) {
             Image(systemName: "bookmark.slash")
@@ -159,7 +198,7 @@ struct EmptyFolderView: View {
 
 struct MoreIdeasSection: View {
     @ObservedObject var viewModel: BookmarkViewModel
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -170,7 +209,7 @@ struct MoreIdeasSection: View {
                     .fontWeight(.semibold)
             }
             .padding(.horizontal)
-            
+
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 15) {
                     ForEach(viewModel.discoverFolders.prefix(3)) { folder in
@@ -191,18 +230,18 @@ struct WaterfallGrid<Item: Identifiable, Content: View>: View {
     let spacing: CGFloat
     let items: [Item]
     let content: (Item) -> Content
-    
+
     init(columns: Int = 2, spacing: CGFloat = 10, items: [Item], @ViewBuilder content: @escaping (Item) -> Content) {
         self.columns = columns
         self.spacing = spacing
         self.items = items
         self.content = content
     }
-    
+
     var body: some View {
         GeometryReader { geometry in
             let columnWidth = (geometry.size.width - CGFloat(columns - 1) * spacing) / CGFloat(columns)
-            
+
             HStack(alignment: .top, spacing: spacing) {
                 ForEach(0..<columns, id: \.self) { columnIndex in
                     LazyVStack(spacing: spacing) {

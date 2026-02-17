@@ -12,7 +12,7 @@ struct DiscoverFolderRow: View {
                         .aspectRatio(contentMode: .fill)
                 } placeholder: {
                     Rectangle()
-                        .fill(Color(folder.color).opacity(0.3))
+                        .fill(Color.fromFolderName(folder.color).opacity(0.3))
                 }
                 .frame(width: 80, height: 80)
                 .clipped()
