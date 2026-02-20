@@ -1,5 +1,4 @@
 import SwiftUI
-
 import UIKit
 import Social
 import UniformTypeIdentifiers
@@ -8,6 +7,7 @@ class ShareViewController: UIViewController {
     private var sharedURL: String?
     private var sharedText: String?
     private var sharedImage: UIImage?
+    private var userFolders: [(name: String, id: String)] = []
     
     private lazy var containerView: UIView = {
         let view = UIView()
@@ -97,6 +97,7 @@ class ShareViewController: UIViewController {
         view.backgroundColor = UIColor.black.withAlphaComponent(0.4)
         setupUI()
         extractSharedContent()
+        fetchUserFolders()
     }
     
     private func setupUI() {
@@ -148,6 +149,35 @@ class ShareViewController: UIViewController {
         ])
     }
     
+    // MARK: - Fetch Real Folders from Server
+    
+    private func fetchUserFolders() {
+        let baseURL = "https://tuckserverapi-production.up.railway.app"
+        guard let apiURL = URL(string: "\(baseURL)/folders") else { return }
+        
+        var request = URLRequest(url: apiURL)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let sharedDefaults = UserDefaults(suiteName: "group.com.bookmarkapp.shared"),
+           let token = sharedDefaults.string(forKey: "authToken") {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            guard let data = data,
+                  let folders = try? JSONDecoder().decode([ShareFolderResponse].self, from: data) else {
+                return
+            }
+            
+            DispatchQueue.main.async {
+                self?.userFolders = folders.map { (name: $0.name, id: $0.id) }
+            }
+        }.resume()
+    }
+    
+    // MARK: - Content Extraction
+    
     private func loadURL(from provider: NSItemProvider) {
         provider.loadItem(forTypeIdentifier: UTType.url.identifier, options: nil) { [weak self] item, _ in
             guard let self else { return }
@@ -198,7 +228,6 @@ class ShareViewController: UIViewController {
                 DispatchQueue.main.async {
                     self.urlLabel.text = url.lastPathComponent
                     self.previewImageView.image = UIImage(systemName: "doc")
-                    // stash it as text for now (we’ll copy it during save)
                     self.sharedText = url.absoluteString
                 }
             }
@@ -208,12 +237,9 @@ class ShareViewController: UIViewController {
     private func loadFileLike(from provider: NSItemProvider, uti: UTType) {
         provider.loadItem(forTypeIdentifier: uti.identifier, options: nil) { [weak self] item, _ in
             guard let self else { return }
-
             DispatchQueue.main.async {
                 self.previewImageView.image = UIImage(systemName: "doc")
                 self.urlLabel.text = uti == .message ? "Email" : "File"
-                // We can only reliably persist this at save-time; keep a hint
-                // If item is URL/Data we’ll handle it in saveBookmark()
             }
         }
     }
@@ -222,7 +248,6 @@ class ShareViewController: UIViewController {
         guard let item = extensionContext?.inputItems.first as? NSExtensionItem,
               let providers = item.attachments, !providers.isEmpty else { return }
 
-        // Pick the “best” provider: URL > image > movie > file > text > data/message
         if let p = providers.first(where: { $0.hasItemConformingToTypeIdentifier(UTType.url.identifier) }) {
             loadURL(from: p); return
         }
@@ -246,7 +271,6 @@ class ShareViewController: UIViewController {
         }
     }
 
-    
     private func fetchMetadata(for url: URL) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
             if self?.sharedImage == nil {
@@ -284,58 +308,61 @@ class ShareViewController: UIViewController {
     }
     
     private func suggestFolder(for url: URL) {
+        // If we have real folders, try to match based on URL content
         let urlString = url.absoluteString.lowercased()
         let host = url.host?.lowercased() ?? ""
         
-        var suggestedFolderName = "Bookmarks"
-        var icon = "folder.fill"
+        // Try to match against existing user folders
+        var bestMatch: String?
         
-        if host.contains("youtube") || host.contains("vimeo") || host.contains("tiktok") {
-            suggestedFolderName = "Videos to Watch"
-            icon = "play.rectangle.fill"
-        } else if host.contains("amazon") || host.contains("ebay") || urlString.contains("shop") {
-            suggestedFolderName = "Buy Later"
-            icon = "cart.fill"
-        } else if host.contains("github") || host.contains("stackoverflow") ||
-                  urlString.contains("tutorial") || urlString.contains("guide") {
-            suggestedFolderName = "Learn to Code"
-            icon = "chevron.left.forwardslash.chevron.right"
-        } else if urlString.contains("article") || urlString.contains("blog") {
-            suggestedFolderName = "Articles to Read"
-            icon = "doc.text.fill"
+        for folder in userFolders {
+            let folderLower = folder.name.lowercased()
+            if host.contains(folderLower) || urlString.contains(folderLower) {
+                bestMatch = folder.name
+                break
+            }
         }
         
+        // If no match from real folders, use first folder or default
+        let suggestedName = bestMatch ?? userFolders.first?.name ?? "Bookmarks"
+        
         var config = folderButton.configuration
-        config?.title = suggestedFolderName
-        config?.image = UIImage(systemName: icon)
+        config?.title = suggestedName
+        config?.image = UIImage(systemName: "folder.fill")
         config?.baseForegroundColor = .systemBlue
         folderButton.configuration = config
     }
     
+    // MARK: - Folder Selection (Real Folders)
+    
     @objc private func selectFolder() {
         let alert = UIAlertController(title: "Select Folder", message: nil, preferredStyle: .actionSheet)
         
-        let folderNames = [
-            ("Learn to Code", "chevron.left.forwardslash.chevron.right"),
-            ("Buy Later", "cart.fill"),
-            ("Videos to Watch", "play.rectangle.fill"),
-            ("Startup Ideas", "lightbulb.fill"),
-            ("Design Inspiration", "paintbrush.fill"),
-            ("Articles to Read", "doc.text.fill")
-        ]
+        if userFolders.isEmpty {
+            // Fallback if folders haven't loaded yet
+            alert.message = "Loading folders..."
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+            present(alert, animated: true)
+            
+            // Retry fetch and dismiss
+            fetchUserFolders()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                alert.dismiss(animated: true) {
+                    self?.selectFolder() // Try again
+                }
+            }
+            return
+        }
         
-        for (name, icon) in folderNames {
-            let action = UIAlertAction(title: name, style: .default) { [weak self] _ in
+        for folder in userFolders {
+            let action = UIAlertAction(title: folder.name, style: .default) { [weak self] _ in
                 var config = self?.folderButton.configuration
-                config?.title = name
-                config?.image = UIImage(systemName: icon)
+                config?.title = folder.name
+                config?.image = UIImage(systemName: "folder.fill")
                 self?.folderButton.configuration = config
             }
-//            if #available(iOS 15.0, *) {
-//                action.image = UIImage(systemName: icon)
-//            }
-            if let img = UIImage(systemName: icon) {
-                action.setValue(img, forKey: "image")   // undocumented, but commonly used
+            if let img = UIImage(systemName: "folder.fill") {
+                action.setValue(img, forKey: "image")
             }
             alert.addAction(action)
         }
@@ -374,23 +401,22 @@ class ShareViewController: UIViewController {
         present(alert, animated: true)
     }
     
+    // MARK: - Save Actions
+    
     @objc private func aiAutoSortAndSave() {
         guard let url = sharedURL, !url.isEmpty else {
             showError("Please share a valid URL for AI sorting")
             return
         }
         
-        // Show loading state
         var config = aiSortButton.configuration
         config?.showsActivityIndicator = true
         config?.title = "AI Analyzing..."
         aiSortButton.configuration = config
         aiSortButton.isEnabled = false
         
-        // Call the API to analyze and save
         Task {
             do {
-                // Use TuckServerAPI to analyze and save bookmark with AI
                 let baseURL = "https://tuckserverapi-production.up.railway.app"
                 guard let apiURL = URL(string: "\(baseURL)/bookmarks/smart-save") else {
                     throw NSError(domain: "InvalidURL", code: 0)
@@ -400,44 +426,38 @@ class ShareViewController: UIViewController {
                 request.httpMethod = "POST"
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                 
-                // Get auth token from shared UserDefaults (App Group)
                 if let sharedDefaults = UserDefaults(suiteName: "group.com.bookmarkapp.shared"),
                    let token = sharedDefaults.string(forKey: "authToken") {
                     request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                 }
                 
                 let title = extractTitle(from: url)
-                let requestBody: [String: Any] = [
+                let requestBody: [String: Any?] = [
                     "url": url,
                     "title": title,
-                    "notes": nil as Any?
+                    "notes": nil
                 ]
                 
-                request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+                request.httpBody = try JSONSerialization.data(withJSONObject: requestBody.compactMapValues { $0 })
                 
                 let (data, response) = try await URLSession.shared.data(for: request)
                 
-                guard let httpResponse = response as? HTTPURLResponse else {
-                    throw NSError(domain: "APIError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])
-                }
-                
-                guard (200...299).contains(httpResponse.statusCode) else {
+                guard let httpResponse = response as? HTTPURLResponse,
+                      (200...299).contains(httpResponse.statusCode) else {
                     let errorMessage = String(data: data, encoding: .utf8) ?? "Unknown error"
-                    throw NSError(domain: "APIError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Server returned \(httpResponse.statusCode): \(errorMessage)"])
+                    throw NSError(domain: "APIError", code: 0, userInfo: [NSLocalizedDescriptionKey: errorMessage])
                 }
                 
-                // Save to pending store as well for immediate sync
-                let payload = PendingBookmarkPayload(
-                    kind: .url,
-                    title: title,
-                    folder: "AI Sorted",
-                    typeRaw: determineBookmarkType(from: url).capitalized,
-                    url: url
-                )
-                PendingStore.append(payload)
+                // Parse response to show which folder it was saved to
+                var folderName = "a folder"
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let folder = json["folder"] as? [String: Any],
+                   let name = folder["name"] as? String {
+                    folderName = name
+                }
                 
                 DispatchQueue.main.async { [weak self] in
-                    self?.showSuccess()
+                    self?.showSuccess(message: "Saved to \"\(folderName)\"")
                 }
             } catch {
                 DispatchQueue.main.async { [weak self] in
@@ -455,10 +475,9 @@ class ShareViewController: UIViewController {
     @objc private func saveBookmark() {
         let folderName = folderButton.configuration?.title ?? "Bookmarks"
 
-        // Decide type (you can improve this logic later)
         let typeRaw: String = {
             if sharedImage != nil { return "Photo" }
-            if let u = sharedURL { return determineBookmarkType(from: u).capitalized } // "Video" etc
+            if let u = sharedURL { return determineBookmarkType(from: u).capitalized }
             if sharedText != nil { return "Quote" }
             return "Other"
         }()
@@ -473,7 +492,7 @@ class ShareViewController: UIViewController {
                 url: url
             )
             PendingStore.append(payload)
-            showSuccess()
+            showSuccess(message: "Saved!")
             return
         }
 
@@ -491,7 +510,7 @@ class ShareViewController: UIViewController {
                     assetFilename: asset.originalFilename
                 )
                 PendingStore.append(payload)
-                showSuccess()
+                showSuccess(message: "Saved!")
             } catch {
                 showError("Failed to save image")
             }
@@ -508,29 +527,25 @@ class ShareViewController: UIViewController {
                 text: text
             )
             PendingStore.append(payload)
-            showSuccess()
+            showSuccess(message: "Saved!")
             return
         }
 
         showError("Nothing to save")
     }
 
-    
     private func extractTitle(from urlString: String) -> String {
         guard let url = URL(string: urlString) else { return urlString }
-        
         if let host = url.host {
             return host.replacingOccurrences(of: "www.", with: "")
                       .replacingOccurrences(of: ".com", with: "")
                       .capitalized
         }
-        
         return urlString
     }
     
     private func determineBookmarkType(from urlString: String) -> String {
         let lower = urlString.lowercased()
-        
         if lower.contains("youtube") || lower.contains("vimeo") || lower.contains("tiktok") {
             return "video"
         } else if lower.contains("amazon") || lower.contains("shop") {
@@ -538,11 +553,12 @@ class ShareViewController: UIViewController {
         } else if lower.contains("twitter") || lower.contains("tweet") {
             return "tweet"
         }
-        
         return "article"
     }
     
-    private func showSuccess() {
+    // MARK: - UI Feedback
+    
+    private func showSuccess(message: String = "Saved!") {
         let successView = UIView()
         successView.backgroundColor = .systemGreen
         successView.layer.cornerRadius = 12
@@ -554,9 +570,11 @@ class ShareViewController: UIViewController {
         checkmark.translatesAutoresizingMaskIntoConstraints = false
         
         let label = UILabel()
-        label.text = "Saved!"
+        label.text = message
         label.textColor = .white
         label.font = .systemFont(ofSize: 16, weight: .semibold)
+        label.textAlignment = .center
+        label.numberOfLines = 2
         label.translatesAutoresizingMaskIntoConstraints = false
         
         successView.addSubview(checkmark)
@@ -566,8 +584,8 @@ class ShareViewController: UIViewController {
         NSLayoutConstraint.activate([
             successView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             successView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            successView.widthAnchor.constraint(equalToConstant: 200),
-            successView.heightAnchor.constraint(equalToConstant: 100),
+            successView.widthAnchor.constraint(equalToConstant: 220),
+            successView.heightAnchor.constraint(equalToConstant: 110),
             
             checkmark.centerXAnchor.constraint(equalTo: successView.centerXAnchor),
             checkmark.topAnchor.constraint(equalTo: successView.topAnchor, constant: 20),
@@ -575,16 +593,17 @@ class ShareViewController: UIViewController {
             checkmark.heightAnchor.constraint(equalToConstant: 40),
             
             label.centerXAnchor.constraint(equalTo: successView.centerXAnchor),
-            label.topAnchor.constraint(equalTo: checkmark.bottomAnchor, constant: 8)
+            label.topAnchor.constraint(equalTo: checkmark.bottomAnchor, constant: 8),
+            label.leadingAnchor.constraint(equalTo: successView.leadingAnchor, constant: 12),
+            label.trailingAnchor.constraint(equalTo: successView.trailingAnchor, constant: -12)
         ])
         
-        // Animate and dismiss
         successView.alpha = 0
         UIView.animate(withDuration: 0.3) {
             successView.alpha = 1
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
             self?.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
         }
     }
@@ -597,5 +616,26 @@ class ShareViewController: UIViewController {
     
     @objc private func cancel() {
         extensionContext?.cancelRequest(withError: NSError(domain: "com.bookmarkapp.share", code: 0))
+    }
+}
+
+// Minimal struct for decoding folder list in the share extension
+private struct ShareFolderResponse: Codable {
+    let id: String
+    let name: String
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name
+    }
+    
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        // Handle UUID as string regardless of format
+        if let uuid = try? c.decode(UUID.self, forKey: .id) {
+            self.id = uuid.uuidString
+        } else {
+            self.id = try c.decode(String.self, forKey: .id)
+        }
+        self.name = try c.decode(String.self, forKey: .name)
     }
 }
