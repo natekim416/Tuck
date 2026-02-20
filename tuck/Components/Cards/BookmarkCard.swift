@@ -7,12 +7,12 @@ struct BookmarkCard: View {
     @ObservedObject var viewModel: BookmarkViewModel
     var folder: Folder?
     @State private var showingDetail = false
-    @State private var linkMetadata: LinkMetadataResult?
+    @State private var previewImage: UIImage?
+    @State private var previewTitle: String?
     @State private var isLoadingMetadata = false
 
     var body: some View {
         Button(action: {
-            // Mark as viewed
             if let folder = folder {
                 viewModel.markBookmarkViewed(bookmark, in: folder)
             }
@@ -24,7 +24,6 @@ struct BookmarkCard: View {
                     .frame(height: 120)
                     .frame(maxWidth: .infinity)
                     .clipped()
-                    .cornerRadius(8, corners: [.topLeft, .topRight])
 
                 VStack(alignment: .leading, spacing: 6) {
                     // Domain label
@@ -36,7 +35,7 @@ struct BookmarkCard: View {
                     }
 
                     // Title
-                    Text(linkMetadata?.title ?? bookmark.displayTitle)
+                    Text(previewTitle ?? bookmark.displayTitle)
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .lineLimit(2)
@@ -82,13 +81,14 @@ struct BookmarkCard: View {
     @ViewBuilder
     private var linkPreviewImage: some View {
         if let uiImage = loadPrimaryAssetImage() {
-            // Local photo asset
             Image(uiImage: uiImage)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
-        } else if let imageURL = linkMetadata?.imageURL ?? bookmark.imageURL,
-                  let url = URL(string: imageURL) {
-            // Remote OG image or bookmark imageURL
+        } else if let previewImage = previewImage {
+            Image(uiImage: previewImage)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+        } else if let imageURL = bookmark.imageURL, let url = URL(string: imageURL) {
             AsyncImage(url: url) { image in
                 image.resizable().aspectRatio(contentMode: .fill)
             } placeholder: {
@@ -107,7 +107,7 @@ struct BookmarkCard: View {
     private var domainPlaceholder: some View {
         ZStack {
             LinearGradient(
-                colors: [.blue.opacity(0.2), .purple.opacity(0.2)],
+                colors: [.blue.opacity(0.15), .purple.opacity(0.15)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -129,7 +129,7 @@ struct BookmarkCard: View {
     private func loadLinkMetadata() {
         let urlString = bookmark.url.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !urlString.isEmpty,
-              linkMetadata == nil,
+              previewImage == nil,
               let url = URL(string: urlString.hasPrefix("http") ? urlString : "https://\(urlString)") else {
             return
         }
@@ -139,47 +139,27 @@ struct BookmarkCard: View {
         let provider = LPMetadataProvider()
         provider.startFetchingMetadata(for: url) { metadata, error in
             DispatchQueue.main.async {
-                isLoadingMetadata = false
+                self.isLoadingMetadata = false
+
                 guard let metadata = metadata else { return }
 
-                var result = LinkMetadataResult(title: metadata.title)
-
-                // Try to get the image URL from the metadata
-                if let imageProvider = metadata.imageProvider {
-                    imageProvider.loadObject(ofClass: UIImage.self) { image, _ in
-                        // We can't easily get a URL from LPMetadataProvider's image,
-                        // but we can save it temporarily. For now just use the title.
-                    }
+                // Get title
+                if let title = metadata.title, !title.isEmpty {
+                    self.previewTitle = title
                 }
 
-                // Use og:url or original URL for the image via a common pattern
-                if let remoteURL = metadata.url ?? metadata.originalURL {
-                    // Try common OG image URL patterns
-                    let host = remoteURL.host ?? ""
-                    if host.contains("youtube") || host.contains("youtu.be") {
-                        // YouTube thumbnail
-                        let videoID = extractYouTubeID(from: remoteURL.absoluteString)
-                        if let videoID = videoID {
-                            result.imageURL = "https://img.youtube.com/vi/\(videoID)/hqdefault.jpg"
+                // Load image from the imageProvider
+                if let imageProvider = metadata.imageProvider {
+                    imageProvider.loadObject(ofClass: UIImage.self) { image, _ in
+                        DispatchQueue.main.async {
+                            if let uiImage = image as? UIImage {
+                                self.previewImage = uiImage
+                            }
                         }
                     }
                 }
-
-                self.linkMetadata = result
             }
         }
-    }
-
-    private func extractYouTubeID(from urlString: String) -> String? {
-        if let url = URL(string: urlString) {
-            if url.host?.contains("youtu.be") == true {
-                return url.pathComponents.last
-            }
-            if let queryItems = URLComponents(string: urlString)?.queryItems {
-                return queryItems.first(where: { $0.name == "v" })?.value
-            }
-        }
-        return nil
     }
 
     // MARK: - Helpers
@@ -204,32 +184,5 @@ struct BookmarkCard: View {
 
         let fileURL = SharedMediaStore.absoluteURL(for: asset.relativePath)
         return UIImage(contentsOfFile: fileURL.path)
-    }
-}
-
-// Simple struct to hold fetched link metadata
-struct LinkMetadataResult {
-    var title: String?
-    var imageURL: String?
-}
-
-// Rounded corner helper
-extension View {
-    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
-        clipShape(RoundedCorner(radius: radius, corners: corners))
-    }
-}
-
-struct RoundedCorner: Shape {
-    var radius: CGFloat = .infinity
-    var corners: UIRectCorner = .allCorners
-
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(
-            roundedRect: rect,
-            byRoundingCorners: corners,
-            cornerRadii: CGSize(width: radius, height: radius)
-        )
-        return Path(path.cgPath)
     }
 }

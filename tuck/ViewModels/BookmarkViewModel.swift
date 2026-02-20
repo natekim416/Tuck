@@ -253,20 +253,21 @@ public final class BookmarkViewModel: ObservableObject {
         guard !items.isEmpty else { return }
         
         Task {
-            // Process all pending bookmarks concurrently
             await withTaskGroup(of: Void.self) { group in
                 for item in items {
                     group.addTask {
                         do {
                             if let url = item.url, !url.isEmpty {
-                                _ = try await TuckServerAPI.shared.analyzeAndSaveBookmark(
+                                // Save directly to the folder the user picked (no AI)
+                                _ = try await TuckServerAPI.shared.createBookmark(
                                     url: url,
                                     title: item.title,
-                                    notes: nil
+                                    notes: nil,
+                                    folderName: item.folder
                                 )
                             }
                         } catch {
-                            // Silently fail individual bookmark syncs
+                            print("[VM] Failed to sync pending bookmark: \(error)")
                         }
                     }
                 }

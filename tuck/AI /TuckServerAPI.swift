@@ -94,6 +94,12 @@ class TuckServerAPI {
         return try await post("/bookmarks/smart-save", body: request, requiresAuth: true)
     }
     
+    /// Save bookmark directly to a specific folder (no AI)
+    func createBookmark(url: String, title: String?, notes: String?, folderName: String?) async throws -> ServerBookmark {
+        let request = CreateBookmarkDirectRequest(url: url, title: title, notes: notes, folderName: folderName)
+        return try await post("/bookmarks", body: request, requiresAuth: true)
+    }
+    
     /// Just analyze without saving (for preview)
     func analyzeBookmark(url: String, title: String?, notes: String?) async throws -> AIAnalysisResult {
         let text = [url, title, notes].compactMap { $0 }.joined(separator: " ")
@@ -314,6 +320,13 @@ struct AnalyzeAndSaveRequest: Codable {
     let url: String
     let title: String?
     let notes: String?
+}
+
+struct CreateBookmarkDirectRequest: Codable {
+    let url: String
+    let title: String?
+    let notes: String?
+    let folderName: String?
 }
 
 struct CreateFolderRequest: Codable {
