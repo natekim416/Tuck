@@ -3,6 +3,7 @@ import SwiftUI
 struct ProfileView: View {
     @State private var showingLogoutAlert = false
     @State private var showingEditProfile = false
+    @State private var showComingSoon = false
     @State private var userProfile = UserProfile(
         username: TuckServerAPI.shared.currentUser?.email.split(separator: "@").first.map(String.init) ?? "User",
         displayName: "",
@@ -123,11 +124,11 @@ struct ProfileView: View {
                             .padding(.bottom, 8)
                         
                         VStack(spacing: 0) {
-                            SettingsRow(icon: "bell.fill", title: "Notifications", color: .orange)
+                            SettingsRow(icon: "bell.fill", title: "Notifications", color: .orange, action: { showComingSoon = true })
                             Divider().padding(.leading, 52)
-                            SettingsRow(icon: "lock.fill", title: "Privacy", color: .blue)
+                            SettingsRow(icon: "lock.fill", title: "Privacy", color: .blue, action: { showComingSoon = true })
                             Divider().padding(.leading, 52)
-                            SettingsRow(icon: "questionmark.circle.fill", title: "Help & Support", color: .green)
+                            SettingsRow(icon: "questionmark.circle.fill", title: "Help & Support", color: .green, action: { showComingSoon = true })
                         }
                         .background(Color.gray.opacity(0.05))
                         .cornerRadius(12)
@@ -165,6 +166,11 @@ struct ProfileView: View {
             }
             .sheet(isPresented: $showingEditProfile) {
                 EditProfileView(userProfile: $userProfile)
+            }
+            .alert("Coming Soon", isPresented: $showComingSoon) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("This feature is coming soon!")
             }
         }
     }

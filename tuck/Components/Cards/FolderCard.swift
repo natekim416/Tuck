@@ -35,17 +35,13 @@ struct FolderCard: View {
             HStack {
                 Label("\(folder.bookmarks.count)", systemImage: "bookmark")
                 Spacer()
-                if folder.totalEstimatedTime > 0 {
-                    Label("\(folder.totalEstimatedTime)m", systemImage: "clock")
+                let viewedCount = folder.bookmarks.filter { $0.lastViewed != nil }.count
+                if viewedCount > 0 {
+                    Label("\(viewedCount)", systemImage: "eye")
                 }
             }
             .font(.caption)
             .foregroundColor(.secondary)
-
-            if folder.progressPercentage > 0 {
-                ProgressView(value: folder.progressPercentage, total: 100)
-                    .tint(c)
-            }
         }
         .padding()
         .frame(width: 160, height: 160)
