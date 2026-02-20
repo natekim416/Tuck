@@ -20,27 +20,6 @@ struct FolderDetailView: View {
                 FolderHeaderView(folder: localFolder)
                     .padding(.horizontal)
 
-                if !localFolder.bookmarks.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Progress")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                            Spacer()
-                            Text("\(localFolder.completedCount)/\(localFolder.bookmarks.count)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-
-                        ProgressView(value: localFolder.progressPercentage, total: 100)
-                            .tint(Color.fromFolderName(localFolder.color))
-                    }
-                    .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(12)
-                    .padding(.horizontal)
-                }
-
                 if localFolder.bookmarks.isEmpty {
                     EmptyFolderView(onAddBookmark: { showingAddBookmark = true })
                 } else {
@@ -159,8 +138,6 @@ struct FolderHeaderView: View {
 
             HStack {
                 Label("\(folder.bookmarks.count) items", systemImage: "bookmark")
-                Spacer()
-                Label("\(folder.totalEstimatedTime) min", systemImage: "clock")
                 Spacer()
                 if folder.isPublic {
                     Label("\(folder.savedByCount) saves", systemImage: "person.2")

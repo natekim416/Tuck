@@ -218,6 +218,13 @@ public final class BookmarkViewModel: ObservableObject {
         }
     }
     
+    func markBookmarkViewed(_ bookmark: Bookmark, in folder: Folder) {
+        if let folderIndex = folders.firstIndex(where: { $0.id == folder.id }),
+           let bookmarkIndex = folders[folderIndex].bookmarks.firstIndex(where: { $0.id == bookmark.id }) {
+            folders[folderIndex].bookmarks[bookmarkIndex].lastViewed = Date()
+        }
+    }
+    
     func copyFolder(_ folder: Folder) {
         var newFolder = folder
         newFolder.id = UUID()

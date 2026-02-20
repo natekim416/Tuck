@@ -180,10 +180,6 @@ struct FolderMasonryGrid: View {
         height += 20 // stats row
         height += 8  // spacing
 
-        if folder.progressPercentage > 0 {
-            height += 24 // progress bar
-        }
-
         height += 16 // padding bottom
         return height
     }
@@ -236,20 +232,16 @@ struct PinterestFolderCard: View {
                         .font(.system(size: 9))
                 }
 
-                if folder.totalEstimatedTime > 0 {
-                    Image(systemName: "clock")
+                // Show how many bookmarks have been viewed
+                let viewedCount = folder.bookmarks.filter { $0.lastViewed != nil }.count
+                if viewedCount > 0 {
+                    Image(systemName: "eye")
                         .font(.system(size: 9))
-                    Text("\(folder.totalEstimatedTime)m")
+                    Text("\(viewedCount)")
                         .font(.caption2)
                 }
             }
             .foregroundColor(.secondary)
-
-            // Progress bar
-            if folder.progressPercentage > 0 {
-                ProgressView(value: folder.progressPercentage, total: 100)
-                    .tint(folderColor)
-            }
         }
         .padding(12)
         .background(Color(.systemBackground))
