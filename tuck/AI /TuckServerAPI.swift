@@ -97,7 +97,15 @@ class TuckServerAPI {
     /// Just analyze without saving (for preview)
     func analyzeBookmark(url: String, title: String?, notes: String?) async throws -> AIAnalysisResult {
         let text = [url, title, notes].compactMap { $0 }.joined(separator: " ")
+        // notes may contain folder context like "Existing folders: X, Y, Z"
         let request = SmartSortRequest(text: text, userExamples: nil)
+        return try await post("/smart-sort", body: request, requiresAuth: true)
+    }
+    
+    /// Analyze with existing folder context
+    func analyzeBookmarkWithContext(url: String, title: String?, notes: String?, existingFolders: String?) async throws -> AIAnalysisResult {
+        let text = [url, title, notes].compactMap { $0 }.joined(separator: " ")
+        let request = SmartSortRequest(text: text, userExamples: existingFolders)
         return try await post("/smart-sort", body: request, requiresAuth: true)
     }
     
@@ -333,8 +341,38 @@ struct ServerUser: Codable {
 
 struct ServerSavedBookmark: Codable {
     let bookmark: ServerBookmark
-    let folder: Folder?
+    let folder: ServerSaveFolder?
     let analysis: AIAnalysisResult?
+    
+    // Use a separate struct since the server's Folder serialization
+    // includes user/bookmarks children that differ from the iOS Folder model
+    struct ServerSaveFolder: Codable {
+        let id: UUID?
+        let name: String
+        let color: String?
+        
+        enum CodingKeys: String, CodingKey {
+            case id, name, color
+        }
+        
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            self.id = try? c.decode(UUID.self, forKey: .id)
+            self.name = (try? c.decode(String.self, forKey: .name)) ?? "Unknown"
+            self.color = try? c.decodeIfPresent(String.self, forKey: .color)
+        }
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case bookmark, folder, analysis
+    }
+    
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.bookmark = try c.decode(ServerBookmark.self, forKey: .bookmark)
+        self.folder = try? c.decodeIfPresent(ServerSaveFolder.self, forKey: .folder)
+        self.analysis = try? c.decodeIfPresent(AIAnalysisResult.self, forKey: .analysis)
+    }
 }
 
 struct ServerBookmark: Codable, Identifiable {
