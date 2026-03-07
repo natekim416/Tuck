@@ -33,37 +33,25 @@ final class AuthStore: ObservableObject {
     }
 
     func signIn(email: String, password: String) async throws {
-        // replace with real auth later
-        try await Task.sleep(nanoseconds: 200_000_000)
-
-        let loggedIn = AppUser(id: UUID().uuidString, email: email)
+        let response = try await TuckServerAPI.shared.login(email: email, password: password)
+        // TuckServerAPI already stores the token — just sync the user
+        let loggedIn = AppUser(id: response.user.id.uuidString, email: response.user.email)
         user = loggedIn
-
         if let data = try? JSONEncoder().encode(loggedIn) {
             UserDefaults.standard.set(data, forKey: userDefaultsKey)
         }
     }
 
     func signOut() {
-        user = nil
-        UserDefaults.standard.removeObject(forKey: userDefaultsKey)
-    }
+            user = nil
+            UserDefaults.standard.removeObject(forKey: userDefaultsKey)
+            TuckServerAPI.shared.logout()
+        }
     
     func signUp(email: String, password: String) async throws {
-        // replace with real signup later
-        try await Task.sleep(nanoseconds: 200_000_000)
-
-        // Tiny bit of “fake validation” so signup feels real
-        guard email.contains("@"), email.contains(".") else {
-            throw AuthError.invalidEmail
-        }
-        guard password.count >= 6 else {
-            throw AuthError.weakPassword
-        }
-
-        let newUser = AppUser(id: UUID().uuidString, email: email)
+        let response = try await TuckServerAPI.shared.register(email: email, password: password)
+        let newUser = AppUser(id: response.user.id.uuidString, email: response.user.email)
         user = newUser
-
         if let data = try? JSONEncoder().encode(newUser) {
             UserDefaults.standard.set(data, forKey: userDefaultsKey)
         }

@@ -8,7 +8,7 @@ class TuckServerAPI {
     private var authToken: String? {
         get {
             // Try shared UserDefaults first (for share extension), then standard
-            if let sharedDefaults = UserDefaults(suiteName: "group.com.bookmarkapp.shared"),
+            if let sharedDefaults = UserDefaults(suiteName: "group.com.tuck.app.shared"),
                let token = sharedDefaults.string(forKey: "authToken") {
                 return token
             }
@@ -17,7 +17,7 @@ class TuckServerAPI {
         set {
             // Store in both standard and shared UserDefaults
             UserDefaults.standard.set(newValue, forKey: "authToken")
-            if let sharedDefaults = UserDefaults(suiteName: "group.com.bookmarkapp.shared") {
+            if let sharedDefaults = UserDefaults(suiteName: "group.com.tuck.app.shared") {
                 sharedDefaults.set(newValue, forKey: "authToken")
             }
         }
@@ -30,7 +30,7 @@ class TuckServerAPI {
     var currentUser: ServerUser? {
         get {
             // Try shared UserDefaults first, then standard
-            if let sharedDefaults = UserDefaults(suiteName: "group.com.bookmarkapp.shared"),
+            if let sharedDefaults = UserDefaults(suiteName: "group.com.tuck.app.shared"),
                let data = sharedDefaults.data(forKey: "currentUser"),
                let user = try? JSONDecoder().decode(ServerUser.self, from: data) {
                 return user
@@ -43,12 +43,12 @@ class TuckServerAPI {
                 let data = try? JSONEncoder().encode(user)
                 // Save to both standard and shared UserDefaults
                 UserDefaults.standard.set(data, forKey: "currentUser")
-                if let sharedDefaults = UserDefaults(suiteName: "group.com.bookmarkapp.shared") {
+                if let sharedDefaults = UserDefaults(suiteName: "group.com.tuck.app.shared") {
                     sharedDefaults.set(data, forKey: "currentUser")
                 }
             } else {
                 UserDefaults.standard.removeObject(forKey: "currentUser")
-                if let sharedDefaults = UserDefaults(suiteName: "group.com.bookmarkapp.shared") {
+                if let sharedDefaults = UserDefaults(suiteName: "group.com.tuck.app.shared") {
                     sharedDefaults.removeObject(forKey: "currentUser")
                 }
             }
@@ -80,7 +80,7 @@ class TuckServerAPI {
         UserDefaults.standard.removeObject(forKey: "authToken")
         UserDefaults.standard.removeObject(forKey: "currentUser")
         // Clear from shared UserDefaults
-        if let sharedDefaults = UserDefaults(suiteName: "group.com.bookmarkapp.shared") {
+        if let sharedDefaults = UserDefaults(suiteName: "group.com.tuck.app.shared") {
             sharedDefaults.removeObject(forKey: "authToken")
             sharedDefaults.removeObject(forKey: "currentUser")
         }
