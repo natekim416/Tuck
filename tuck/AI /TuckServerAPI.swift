@@ -7,7 +7,6 @@ class TuckServerAPI {
     
     private var authToken: String? {
         get {
-            // Try shared UserDefaults first (for share extension), then standard
             if let sharedDefaults = UserDefaults(suiteName: "group.com.tuck.app.shared"),
                let token = sharedDefaults.string(forKey: "authToken") {
                 return token
@@ -15,7 +14,6 @@ class TuckServerAPI {
             return UserDefaults.standard.string(forKey: "authToken")
         }
         set {
-            // Store in both standard and shared UserDefaults
             UserDefaults.standard.set(newValue, forKey: "authToken")
             if let sharedDefaults = UserDefaults(suiteName: "group.com.tuck.app.shared") {
                 sharedDefaults.set(newValue, forKey: "authToken")
@@ -29,7 +27,6 @@ class TuckServerAPI {
     
     var currentUser: ServerUser? {
         get {
-            // Try shared UserDefaults first, then standard
             if let sharedDefaults = UserDefaults(suiteName: "group.com.tuck.app.shared"),
                let data = sharedDefaults.data(forKey: "currentUser"),
                let user = try? JSONDecoder().decode(ServerUser.self, from: data) {
@@ -41,7 +38,6 @@ class TuckServerAPI {
         set {
             if let user = newValue {
                 let data = try? JSONEncoder().encode(user)
-                // Save to both standard and shared UserDefaults
                 UserDefaults.standard.set(data, forKey: "currentUser")
                 if let sharedDefaults = UserDefaults(suiteName: "group.com.tuck.app.shared") {
                     sharedDefaults.set(data, forKey: "currentUser")
@@ -76,39 +72,37 @@ class TuckServerAPI {
     func logout() {
         authToken = nil
         currentUser = nil
-        // Also clear from standard UserDefaults explicitly
         UserDefaults.standard.removeObject(forKey: "authToken")
         UserDefaults.standard.removeObject(forKey: "currentUser")
-        // Clear from shared UserDefaults
         if let sharedDefaults = UserDefaults(suiteName: "group.com.tuck.app.shared") {
             sharedDefaults.removeObject(forKey: "authToken")
             sharedDefaults.removeObject(forKey: "currentUser")
         }
     }
+
+    /// Permanently deletes the authenticated user's account and all associated data.
+    func deleteAccount() async throws {
+        try await delete("/auth/account", requiresAuth: true)
+    }
     
     // MARK: - Smart Sort & Bookmarks
     
-    /// Analyze and automatically save bookmark to appropriate folder
     func analyzeAndSaveBookmark(url: String, title: String?, notes: String?) async throws -> ServerSavedBookmark {
         let request = AnalyzeAndSaveRequest(url: url, title: title, notes: notes)
         return try await post("/bookmarks/smart-save", body: request, requiresAuth: true)
     }
     
-    /// Save bookmark directly to a specific folder (no AI)
     func createBookmark(url: String, title: String?, notes: String?, folderName: String?) async throws -> ServerBookmark {
         let request = CreateBookmarkDirectRequest(url: url, title: title, notes: notes, folderName: folderName)
         return try await post("/bookmarks", body: request, requiresAuth: true)
     }
     
-    /// Just analyze without saving (for preview)
     func analyzeBookmark(url: String, title: String?, notes: String?) async throws -> AIAnalysisResult {
         let text = [url, title, notes].compactMap { $0 }.joined(separator: " ")
-        // notes may contain folder context like "Existing folders: X, Y, Z"
         let request = SmartSortRequest(text: text, userExamples: nil)
         return try await post("/smart-sort", body: request, requiresAuth: true)
     }
     
-    /// Analyze with existing folder context
     func analyzeBookmarkWithContext(url: String, title: String?, notes: String?, existingFolders: String?) async throws -> AIAnalysisResult {
         let text = [url, title, notes].compactMap { $0 }.joined(separator: " ")
         let request = SmartSortRequest(text: text, userExamples: existingFolders)
@@ -357,8 +351,6 @@ struct ServerSavedBookmark: Codable {
     let folder: ServerSaveFolder?
     let analysis: AIAnalysisResult?
     
-    // Use a separate struct since the server's Folder serialization
-    // includes user/bookmarks children that differ from the iOS Folder model
     struct ServerSaveFolder: Codable {
         let id: UUID?
         let name: String
@@ -443,7 +435,4 @@ enum APIError: LocalizedError {
             return reason
         }
     }
-    
-    
-    
 }
